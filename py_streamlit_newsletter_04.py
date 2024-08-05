@@ -118,7 +118,7 @@ if not st.session_state.authenticated:
     login()
 else:
     # Display the logo above the headline
-    st.image('/Users/tnakip-babucke/Documents/Vorlagen/Logos/Vereinslogo/Logo_FCB.png', use_column_width=False, width=200)
+    st.image('Logo_FCB.png', use_column_width=False, width=200)  # Corrected path
     
     # Main dashboard
     st.markdown(
@@ -167,7 +167,7 @@ else:
         league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
         # Drop rows with NaN values in the current metric
-        top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+        top10 = league_and_position_data[['Player', 'Age', 'Team', 'Position', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
         # Check if there are any rows after dropping NaNs
         if top10.empty:
@@ -175,7 +175,6 @@ else:
             st.write("No data available")
         else:
             st.header(f"Top 10 Players in {metric}")
-            top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
             top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")  # Format the values to two decimals
 
             # Create HTML table with conditional formatting

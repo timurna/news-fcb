@@ -188,4 +188,3 @@ else:
 
             # Display the styled DataFrame
             st.write(top10_styled.to_html(), unsafe_allow_html=True)
-streamlit run "/Users/tnakip-babucke/Documents/Scouting/Datenscouting/03_R-Studio | Python/02_Newsletter/py_streamlit_newsletter_04.py"

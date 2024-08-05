@@ -4,7 +4,7 @@ from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
 
 # Load the dataset
-file_path = 'cleaned_merged_newsletter_skillcorner_v2.xlsx'  # Adjust this path if necessary
+file_path = 'data/cleaned_merged_newsletter_skillcorner_v2.xlsx'  # Adjust this path if necessary
 data = pd.read_excel(file_path)
 
 # Calculate age from birthdate

@@ -118,7 +118,7 @@ if not st.session_state.authenticated:
     login()
 else:
     # Display the logo above the headline
-    st.image('Logo_FCB.png', use_column_width=False, width=200)  # Corrected path
+    st.image('Logo_FCB.png', use_column_width=False, width=200)
     
     # Main dashboard
     st.markdown(
@@ -166,8 +166,15 @@ else:
         # Ensure the metric column is numeric
         league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
+        # Check if the necessary columns exist
+        required_columns = ['Player_y', 'Age', 'Team_y', 'Position_y', metric]
+        missing_columns = [col for col in required_columns if col not in league_and_position_data.columns]
+        if missing_columns:
+            st.error(f"Missing columns in the dataset: {', '.join(missing_columns)}")
+            continue
+
         # Drop rows with NaN values in the current metric
-        top10 = league_and_position_data[['Player', 'Age', 'Team', 'Position', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+        top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
         # Check if there are any rows after dropping NaNs
         if top10.empty:

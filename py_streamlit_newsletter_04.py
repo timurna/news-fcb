@@ -1,8 +1,4 @@
 import streamlit as st
-from streamlit_theme import st_theme
-theme = st_theme()
-st.write(theme)
-
 import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer

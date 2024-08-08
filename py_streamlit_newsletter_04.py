@@ -151,7 +151,7 @@ else:
     league_and_position_data = league_data[league_data['Position Groups'].apply(lambda groups: selected_position_group in groups)]
 
     # Metrics of interest
-    scores = ['Physical Offensive Score', 'Physical Defensive Score', 'Offensive Score', 'Defensive Score']
+    scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
     metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
                                                'ProgCarry', 'TakeOn', 'Success1v1', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 

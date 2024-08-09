@@ -3,6 +3,43 @@ import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
 
+# Function to apply custom CSS for mobile responsiveness
+def set_mobile_css():
+    st.markdown(
+        """
+        <style>
+        @media only screen and (max-width: 600px) {
+            .stApp {
+                padding: 0 10px;
+            }
+            .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+                font-size: 1.2em !important;
+            }
+            .headline {
+                font-size: 1.5em !important;
+            }
+            .stDataFrame th, .stDataFrame td {
+                font-size: 0.8em !important;
+            }
+            .css-12w0qpk, .css-15tx938, .stSelectbox label, .stTable th, .stTable thead th, .dataframe th {
+                font-size: 0.8em !important;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
+# Glossary content
+glossary = {
+    'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
+    'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
+    'Offensive Score': 'A score representing a player\'s overall offensive performance.',
+    'Defensive Score': 'A score representing a player\'s overall defensive performance.',
+    'Distance': 'Total distance covered by the player during the match.',
+    'M/min': 'Meters covered per minute by the player.',
+    # Add explanations for other metrics...
+}
+
 # Load the dataset
 file_path = 'cleaned_merged_newsletter_skillcorner_v2.xlsx'  # Adjust this path if necessary
 data = pd.read_excel(file_path)
@@ -117,6 +154,8 @@ if 'authenticated' not in st.session_state:
 if not st.session_state.authenticated:
     login()
 else:
+    set_mobile_css()
+
     # Display the logo above the headline
     st.image('Logo_FCB.png', use_column_width=False, width=200)
     
@@ -132,7 +171,31 @@ else:
             font-family: 'FCBayernSans-CondSemiBold', sans-serif;
             font-size: 3em;
             text-align: center;
-            color: black;
+        }}
+        .tooltip {{
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted black;
+        }}
+        .tooltip .tooltiptext {{
+            visibility: hidden;
+            width: 120px;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Position the tooltip above the text */
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }}
+        .tooltip:hover .tooltiptext {{
+            visibility: visible;
+            opacity: 1;
         }}
         </style>
         <div class="headline">SCOUTING NEWSLETTER <br> {timeframe}</div>
@@ -140,57 +203,76 @@ else:
         unsafe_allow_html=True
     )
 
-    # Filter for league
-    leagues = data['Competition'].unique()
-    selected_league = st.selectbox("Select League", leagues)
-    league_data = data[data['Competition'] == selected_league]
+    # Define columns for layout
+    col1, col2 = st.columns([1, 3])
 
-    # Filter for position group
-    position_group_options = list(position_groups.keys())
-    selected_position_group = st.selectbox("Select Position Group", position_group_options)
-    league_and_position_data = league_data[league_data['Position Groups'].apply(lambda groups: selected_position_group in groups)]
+    # Glossary section in the first column
+    with col1:
+        with st.expander("Glossary"):
+            for metric, explanation in glossary.items():
+                st.markdown(f"**{metric}:** {explanation}")
 
-    # Metrics of interest
-    scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
-    metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
-                                               'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
-                                               'ProgCarry', 'TakeOn', 'Success1v1', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
-                                               'Blocks', 'Int', 'AdjInt', 'Clrnce', 'Goal', 'Shot/Goal', 'MinPerGoal', 'GoalExPn', 
-                                               'ExpG', 'xGOT', 'ExpGExPn', 'xG +/-', 'Shot', 'SOG', 'Shot conversion', 'Ast', 'xA',
-                                               'OnTarget%', 'TcklMade%', 'Pass%']
+    # Metrics tables in the second column
+    with col2:
+        # Filter for league
+        leagues = data['Competition'].unique()
+        selected_league = st.selectbox("Select League", leagues)
+        league_data = data[data['Competition'] == selected_league]
 
-    # Combine scores and metrics
-    all_metrics = scores + metrics
+        # Filter for position group
+        position_group_options = list(position_groups.keys())
+        selected_position_group = st.selectbox("Select Position Group", position_group_options)
+        league_and_position_data = league_data[league_data['Position Groups'].apply(lambda groups: selected_position_group in groups)]
 
-    for metric in all_metrics:
-        # Ensure the metric column is numeric
-        league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
+        # Metrics of interest
+        scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
+        metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
+                                                   'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
+                                                   'ProgCarry', 'TakeOn', 'Success1v1', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
+                                                   'Blocks', 'Int', 'AdjInt', 'Clrnce', 'Goal', 'Shot/Goal', 'MinPerGoal', 'GoalExPn', 
+                                                   'ExpG', 'xGOT', 'ExpGExPn', 'xG +/-', 'Shot', 'SOG', 'Shot conversion', 'Ast', 'xA',
+                                                   'OnTarget%', 'TcklMade%', 'Pass%']
 
-        # Check if the necessary columns exist
-        required_columns = ['Player_y', 'Age', 'Team_y', 'Position_y', metric]
-        missing_columns = [col for col in required_columns if col not in league_and_position_data.columns]
-        if missing_columns:
-            st.error(f"Missing columns in the dataset: {', '.join(missing_columns)}")
-            continue
+        # Combine scores and metrics
+        all_metrics = scores + metrics
 
-        # Drop rows with NaN values in the current metric
-        top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+        # Add tooltip attributes to the table headers
+        tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
-        # Check if there are any rows after dropping NaNs
-        if top10.empty:
-            st.header(f"Top 10 Players in {metric}")
-            st.write("No data available")
-        else:
-            st.header(f"Top 10 Players in {metric}")
-            top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")  # Format the values to two decimals
+        for metric in all_metrics:
+            # Ensure the metric column is numeric
+            league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-            # Create HTML table with conditional formatting
-            def color_row(row):
-                if row['Age'] < 24:
-                    return [f'background-color: #d4edda']*len(row)
-                return ['']*len(row)
+            # Check if the necessary columns exist
+            required_columns = ['Player_y', 'Age', 'Team_y', 'Position_y', metric]
+            missing_columns = [col for col in required_columns if col not in league_and_position_data.columns]
+            if missing_columns:
+                st.error(f"Missing columns in the dataset: {', '.join(missing_columns)}")
+                continue
 
-            top10_styled = top10.style.apply(color_row, axis=1)
+            # Drop rows with NaN values in the current metric
+            top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
-            # Display the styled DataFrame
-            st.write(top10_styled.to_html(), unsafe_allow_html=True)
+            # Check if there are any rows after dropping NaNs
+            if top10.empty:
+                st.header(f"Top 10 Players in {metric}")
+                st.write("No data available")
+            else:
+                st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+                top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
+                top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")  # Format the values to two decimals
+
+                # Create HTML table with tooltips for headers and conditional formatting for U24
+                def color_row(row):
+                    return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
+
+                top10_styled = top10.style.apply(color_row, axis=1)
+                top10_html = top10_styled.to_html()
+
+                # Add tooltips to the headers using HTML and CSS
+                for header, tooltip in tooltip_headers.items():
+                    if tooltip:
+                        top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
+
+                # Display the styled DataFrame with tooltips
+                st.write(top10_html, unsafe_allow_html=True)

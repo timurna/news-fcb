@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
-import matplotlib.pyplot as plt
-from io import BytesIO
-from PIL import Image
 
 # Function to apply custom CSS for mobile responsiveness
 def set_mobile_css():
@@ -281,24 +278,6 @@ else:
 
                         # Display the styled DataFrame with tooltips
                         st.write(top10_html, unsafe_allow_html=True)
-
-                        # Add a download button
-                        buffer = BytesIO()
-                        fig, ax = plt.subplots(figsize=(10, 4))
-                        ax.axis('tight')
-                        ax.axis('off')
-                        ax.table(cellText=top10.values, colLabels=top10.columns, cellLoc='center', loc='center')
-                        plt.savefig(buffer, format='png')
-                        buffer.seek(0)
-                        image = Image.open(buffer)
-
-                        st.download_button(
-                            label="Download Table as PNG",
-                            data=buffer,
-                            file_name=f"{metric}_top10.png",
-                            mime="image/png"
-                        )
-                        plt.close(fig)
 
         # Create collapsible sections for each metric category
         display_metric_tables(scores, "Score Metrics")

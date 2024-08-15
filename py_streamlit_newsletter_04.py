@@ -239,40 +239,48 @@ else:
         # Add tooltip attributes to the table headers
         tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
-        for metric in all_metrics:
-            # Ensure the metric column is numeric
-            league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
+        def display_metric_tables(metrics_list, title):
+            with st.expander(title):
+                for metric in metrics_list:
+                    # Ensure the metric column is numeric
+                    league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-            # Check if the necessary columns exist
-            required_columns = ['Player_y', 'Age', 'Team_y', 'Position_y', metric]
-            missing_columns = [col for col in required_columns if col not in league_and_position_data.columns]
-            if missing_columns:
-                st.error(f"Missing columns in the dataset: {', '.join(missing_columns)}")
-                continue
+                    # Check if the necessary columns exist
+                    required_columns = ['Player_y', 'Age', 'Team_y', 'Position_y', metric]
+                    missing_columns = [col for col in required_columns if col not in league_and_position_data.columns]
+                    if missing_columns:
+                        st.error(f"Missing columns in the dataset: {', '.join(missing_columns)}")
+                        continue
 
-            # Drop rows with NaN values in the current metric
-            top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    # Drop rows with NaN values in the current metric
+                    top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
-            # Check if there are any rows after dropping NaNs
-            if top10.empty:
-                st.header(f"Top 10 Players in {metric}")
-                st.write("No data available")
-            else:
-                st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
-                top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
-                top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")  # Format the values to two decimals
+                    # Check if there are any rows after dropping NaNs
+                    if top10.empty:
+                        st.header(f"Top 10 Players in {metric}")
+                        st.write("No data available")
+                    else:
+                        st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+                        top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
+                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")  # Format the values to two decimals
 
-                # Create HTML table with tooltips for headers and conditional formatting for U24
-                def color_row(row):
-                    return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
+                        # Create HTML table with tooltips for headers and conditional formatting for U24
+                        def color_row(row):
+                            return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
-                top10_styled = top10.style.apply(color_row, axis=1)
-                top10_html = top10_styled.to_html()
+                        top10_styled = top10.style.apply(color_row, axis=1)
+                        top10_html = top10_styled.to_html()
 
-                # Add tooltips to the headers using HTML and CSS
-                for header, tooltip in tooltip_headers.items():
-                    if tooltip:
-                        top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
+                        # Add tooltips to the headers using HTML and CSS
+                        for header, tooltip in tooltip_headers.items():
+                            if tooltip:
+                                top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
 
-                # Display the styled DataFrame with tooltips
-                st.write(top10_html, unsafe_allow_html=True)
+                        # Display the styled DataFrame with tooltips
+                        st.write(top10_html, unsafe_allow_html=True)
+
+        # Create collapsible sections for each metric category
+        display_metric_tables(scores, "Score Metrics")
+        display_metric_tables(physical_metrics, "Physical Metrics")
+        display_metric_tables(offensive_metrics, "Offensive Metrics")
+        display_metric_tables(defensive_metrics, "Defensive Metrics")

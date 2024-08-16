@@ -92,7 +92,7 @@ timeframe_start = data['Date'].min().strftime('%d-%m-%Y')
 timeframe_end = data['Date'].max().strftime('%d-%m-%Y')
 timeframe = f"{timeframe_start} - {timeframe_end}"
 
-# Define the metrics for physical offensive score, physical defensive score, offensive score, and defensive score
+# Define the metrics for physical offensive score, physical defensive score, offensive score, defensive score, and goal threat score
 physical_offensive_metrics = [
     'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
     'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
@@ -112,6 +112,9 @@ offensive_metrics = [
 defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
+
+# Define the metrics for Goal Threat Score
+goal_threat_metrics = ['Goal', 'Shot', 'SOG', 'OnTarget%']
 
 # Normalize and calculate the scores
 scaler = MinMaxScaler(feature_range=(0, 10))
@@ -136,6 +139,14 @@ data['Offensive Score'] = scaler.fit_transform(
 data['Defensive Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
 ).mean(axis=1)
+
+# Calculate Goal Threat score
+data['Goal Threat'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
+).mean(axis=1)
+
+# Score List
+scores = ['Offensive Score', 'Defensive Score', 'Goal Threat', 'Physical Offensive Score', 'Physical Defensive Score']
 
 # User authentication (basic example)
 def authenticate(username, password):

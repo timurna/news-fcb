@@ -114,8 +114,9 @@ defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
 
-# Define the metrics for Goal Threat Score
-goal_threat_metrics = ['Goal', 'Shot', 'SOG', 'OnTarget%']
+goal_threat_metrics = [
+    'Goal', 'Shot', 'SOG', 'OnTarget%'
+]
 
 # Normalize and calculate the scores
 scaler = MinMaxScaler(feature_range=(0, 10))
@@ -142,9 +143,27 @@ data['Defensive Score'] = scaler.fit_transform(
 ).mean(axis=1)
 
 # Calculate Goal Threat score
-data['Goal Threat'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
-).mean(axis=1)
+# Define the weights for each metric in Goal Threat Score
+weights = {
+    'Goal': 2,        # Double weight for 'Goal'
+    'Shot': 1,
+    'SOG': 1,
+    'OnTarget%': 1
+}
+
+# Normalize and calculate the weighted Goal Threat score
+normalized_goal = scaler.fit_transform(quantile_transformer.fit_transform(data[['Goal']].fillna(0))) * weights['Goal']
+normalized_shot = scaler.fit_transform(quantile_transformer.fit_transform(data[['Shot']].fillna(0))) * weights['Shot']
+normalized_sog = scaler.fit_transform(quantile_transformer.fit_transform(data[['SOG']].fillna(0))) * weights['SOG']
+normalized_ontarget = scaler.fit_transform(quantile_transformer.fit_transform(data[['OnTarget%']].fillna(0))) * weights['OnTarget%']
+
+# Calculate the weighted average for the Goal Threat score
+data['Goal Threat'] = (
+    normalized_goal +
+    normalized_shot +
+    normalized_sog +
+    normalized_ontarget
+).mean(axis=1) / sum(weights.values())
 
 # Score List
 scores = ['Offensive Score', 'Defensive Score', 'Goal Threat', 'Physical Offensive Score', 'Physical Defensive Score']

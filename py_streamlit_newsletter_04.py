@@ -38,6 +38,7 @@ glossary = {
     'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
     'Offensive Score': 'A score representing a player\'s overall offensive performance.',
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
+    'Goal Threat': 'A score representing a player\'s goal-scoring potential based on key metrics like goals, shots, shots on goal, and accuracy.',
     'Distance': 'Total distance covered by the player during the match.',
     'M/min': 'Meters covered per minute by the player.',
     # Add explanations for other metrics...
@@ -239,13 +240,14 @@ else:
         league_and_position_data = league_data[league_data['Position Groups'].apply(lambda groups: selected_position_group in groups)]
 
         # Metrics of interest
-        scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
-        metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
-                                                   'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
-                                                   'ProgCarry', 'TakeOn', 'Success1v1', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
-                                                   'Blocks', 'Int', 'AdjInt', 'Clrnce', 'Goal', 'Shot/Goal', 'MinPerGoal', 'GoalExPn', 
-                                                   'ExpG', 'xGOT', 'ExpGExPn', 'xG +/-', 'Shot', 'SOG', 'Shot conversion', 'Ast', 'xA',
-                                                   'OnTarget%', 'TcklMade%', 'Pass%']
+        metrics = ['PSV-99'] + physical_metrics + [
+            'Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
+            'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
+            'ProgCarry', 'TakeOn', 'Success1v1', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
+            'Blocks', 'Int', 'AdjInt', 'Clrnce', 'Goal', 'Shot/Goal', 'MinPerGoal', 'GoalExPn', 
+            'ExpG', 'xGOT', 'ExpGExPn', 'xG +/-', 'Shot', 'SOG', 'Shot conversion', 'Ast', 'xA',
+            'OnTarget%', 'TcklMade%', 'Pass%'
+        ]
 
         # Combine scores and metrics
         all_metrics = scores + metrics

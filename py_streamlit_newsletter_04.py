@@ -165,7 +165,7 @@ data['Goal Threat'] = (
     normalized_ontarget
 ).mean(axis=1) / sum(weights.values())
 
-# Score List
+# Score List in the correct order
 scores = ['Offensive Score', 'Defensive Score', 'Goal Threat', 'Physical Offensive Score', 'Physical Defensive Score']
 
 # User authentication (basic example)
@@ -233,7 +233,6 @@ else:
             league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
         ]
 
-        scores = ['Physical Offensive Score', 'Physical Defensive Score', 'Offensive Score', 'Defensive Score', 'Goal Threat']
         metrics = ['PSV-99'] + physical_metrics + [
             'Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
             'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
@@ -258,20 +257,21 @@ else:
                         st.header(f"Top 10 Players in {metric}")
                         st.write("No data available")
                     else:
-                        st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
-                        top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
-                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
-
+                        # Create HTML table with tooltips for headers and conditional formatting for U24
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
+                        # Building table with tooltips for headers
                         top10_styled = top10.style.apply(color_row, axis=1)
                         top10_html = top10_styled.to_html()
 
+                        # Add tooltips to the headers using HTML and CSS
                         for header, tooltip in tooltip_headers.items():
                             if tooltip:
                                 top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
 
+                        # Display the styled DataFrame with tooltips
+                        st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         st.write(top10_html, unsafe_allow_html=True)
 
                         # Add a download button

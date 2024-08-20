@@ -191,7 +191,7 @@ else:
     set_mobile_css()
 
     # Display the logo above the headline
-    st.image('Logo_FCB.png', use_column_width=False, width=200)
+    st.image('FCBayern-Wortmarke-SF-ANSICHT.png', use_column_width=False, width=200)
     
     # Main dashboard
     st.markdown(

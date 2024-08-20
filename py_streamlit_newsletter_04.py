@@ -190,75 +190,50 @@ if not st.session_state.authenticated:
 else:
     set_mobile_css()
 
-    # Display the logo above the headline
+    # Display the logo above the filters
     st.image('FCBayern-Wortmarke-SF-ANSICHT.png', use_column_width=False, width=800)
+
+    # Define the filters to get user input before displaying metrics
+    col_filters1, col_filters2 = st.columns([1, 1])
+
+    with col_filters1:
+        leagues = data['Competition'].unique()
+        selected_league = st.selectbox("Select League", leagues, key="select_league")
     
-    # Main dashboard
-    st.markdown(
-        f"""
-        <style>
-        @font-face {{
-            font-family: 'FCBayernSans-CondSemiBold';
-            src: url('/path/to/FCBayernSans-CondSemiBold.otf') format('opentype');
-        }}
-        .headline {{
-            font-family: 'FCBayernSans-CondSemiBold', sans-serif;
-            font-size: 3em;
-            text-align: center;
-        }}
-        .tooltip {{
-            position: relative;
-            display: inline-block;
-            border-bottom: 1px dotted black;
-        }}
-        .tooltip .tooltiptext {{
-            visibility: hidden;
-            width: 120px;
-            background-color: black;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 0;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%; /* Position the tooltip above the text */
-            left: 50%;
-            margin-left: -60px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }}
-        .tooltip:hover .tooltiptext {{
-            visibility: visible;
-            opacity: 1;
-        }}
-        </style>
-        <div class="headline">SCOUTING NEWSLETTER <br> {timeframe}</div>
-        """,
-        unsafe_allow_html=True
-    )
+    with col_filters2:
+        league_data = data[data['Competition'] == selected_league]
 
-    # Define columns for layout
+        # Week Summary and Matchday Filtering Logic
+        week_summary = league_data.groupby(['Competition', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+        week_summary.columns = ['Competition', 'Week', 'min', 'max']
+
+        week_summary['min'] = pd.to_datetime(week_summary['min'])
+        week_summary['max'] = pd.to_datetime(week_summary['max'])
+
+        week_summary['Matchday'] = week_summary.apply(
+            lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
+        )
+
+        filtered_weeks = week_summary[week_summary['Competition'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
+
+        matchday_options = filtered_weeks['Matchday'].tolist()
+        selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
+
+    selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
+    league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
+
+    # Now define the layout with columns, starting with the filters
     col1, col2 = st.columns([1, 3])
-
-    # Glossary section in the first column
-    with col1:
-        with st.expander("Glossary"):
-            for metric, explanation in glossary.items():
-                st.markdown(f"**{metric}:** {explanation}")
 
     # Metrics tables in the second column
     with col2:
-        # Filter for league
-        leagues = data['Competition'].unique()
-        selected_league = st.selectbox("Select League", leagues)
-        league_data = data[data['Competition'] == selected_league]
-
-        # Filter for position group
         position_group_options = list(position_groups.keys())
-        selected_position_group = st.selectbox("Select Position Group", position_group_options)
-        league_and_position_data = league_data[league_data['Position Groups'].apply(lambda groups: selected_position_group in groups)]
+        selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
+        league_and_position_data = league_and_position_data[
+            league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
+        ]
 
-        # Metrics of interest
+        scores = ['Physical Offensive Score', 'Physical Defensive Score', 'Offensive Score', 'Defensive Score', 'Goal Threat']
         metrics = ['PSV-99'] + physical_metrics + [
             'Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
             'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
@@ -268,50 +243,35 @@ else:
             'OnTarget%', 'TcklMade%', 'Pass%'
         ]
 
-        # Combine scores and metrics
         all_metrics = scores + metrics
 
-        # Add tooltip attributes to the table headers
         tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
         def display_metric_tables(metrics_list, title):
             with st.expander(title):
                 for metric in metrics_list:
-                    # Ensure the metric column is numeric
                     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-                    # Check if the necessary columns exist
-                    required_columns = ['Player_y', 'Age', 'Team_y', 'Position_y', metric]
-                    missing_columns = [col for col in required_columns if col not in league_and_position_data.columns]
-                    if missing_columns:
-                        st.error(f"Missing columns in the dataset: {', '.join(missing_columns)}")
-                        continue
-
-                    # Drop rows with NaN values in the current metric
                     top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
-                    # Check if there are any rows after dropping NaNs
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")
                         st.write("No data available")
                     else:
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
-                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")  # Format the values to two decimals
+                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
-                        # Create HTML table with tooltips for headers and conditional formatting for U24
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
                         top10_styled = top10.style.apply(color_row, axis=1)
                         top10_html = top10_styled.to_html()
 
-                        # Add tooltips to the headers using HTML and CSS
                         for header, tooltip in tooltip_headers.items():
                             if tooltip:
                                 top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
 
-                        # Display the styled DataFrame with tooltips
                         st.write(top10_html, unsafe_allow_html=True)
 
                         # Add a download button
@@ -337,3 +297,9 @@ else:
         display_metric_tables(physical_metrics, "Physical Metrics")
         display_metric_tables(offensive_metrics, "Offensive Metrics")
         display_metric_tables(defensive_metrics, "Defensive Metrics")
+
+    # Glossary section now placed below the metrics tables
+    with col2:
+        with st.expander("Glossary"):
+            for metric, explanation in glossary.items():
+                st.markdown(f"**{metric}:** {explanation}")

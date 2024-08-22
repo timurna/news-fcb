@@ -91,10 +91,11 @@ defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
 
+# Function to load data from a GitHub repository and cache it
 @st.cache_data
-def load_data(file_path):
+def load_data_from_github(url):
     # Load the dataset
-    data = pd.read_excel(file_path)
+    data = pd.read_excel(url)
     
     # Calculate age from birthdate
     data['Birthdate'] = pd.to_datetime(data['Birthdate'])
@@ -123,8 +124,11 @@ def load_data(file_path):
     
     return data, physical_metrics
 
+# Example URL: Replace with your actual GitHub raw file link
+url = 'https://raw.githubusercontent.com/timurna/news-fcb/340bc2b2c6c1a2ac0395de33cff68b9684abbc41/data_newsletter.xlsx'
+
 # Load the data with caching
-data, physical_metrics = load_data('data_newsletter.xlsx')
+data, physical_metrics = load_data_from_github(url)
 
 @st.cache_data
 def calculate_scores(data, physical_metrics, offensive_metrics, defensive_metrics):

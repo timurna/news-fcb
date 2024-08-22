@@ -69,16 +69,7 @@ glossary = {
     # Add explanations for other metrics...
 }
 
-# Load the dataset
-file_path = 'data_newsletter.xlsx'
-data = pd.read_excel(file_path)
-
-# Calculate age from birthdate
-data['Birthdate'] = pd.to_datetime(data['Birthdate'])
-today = datetime.today()
-data['Age'] = data['Birthdate'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
-
-# Define position groups with potential overlaps
+# Define position groups globally so they can be used throughout the script
 position_groups = {
     'IV': ['LCB', 'RCB', 'CB'],
     'AV': ['LB', 'RB'],
@@ -92,85 +83,106 @@ position_groups = {
     'ST': ['CF', 'LF', 'RF']
 }
 
-# Assign positions to multiple groups
-data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
-
-# Convert text-based numbers to numeric
-physical_metrics = ['Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
-                    'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
-                    'Medium Deceleration Count', 'High Deceleration Count', 'Distance OTIP', 'M/min OTIP',
-                    'HSR Distance OTIP', 'HSR Count OTIP', 'Sprint Distance OTIP', 'Sprint Count OTIP',
-                    'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP',
-                    'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP',
-                    'PSV-99']
-
-for metric in physical_metrics:
-    data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
-
-# Calculate additional metrics
-data['OnTarget%'] = (data['SOG'] / data['Shot']) * 100
-data['TcklMade%'] = (data['Tckl'] / data['TcklAtt']) * 100
-data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
-
-# Normalize and calculate the scores
-scaler = MinMaxScaler(feature_range=(0, 10))
-quantile_transformer = QuantileTransformer(output_distribution='uniform')
-
-# Calculate physical offensive score
-data['Physical Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate physical defensive score
-data['Physical Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate offensive score
+# Define offensive and defensive metrics globally
 offensive_metrics = [
     'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
 ]
 
-data['Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate defensive score
 defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
 
-data['Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
-).mean(axis=1)
+@st.cache_data
+def load_data(file_path):
+    # Load the dataset
+    data = pd.read_excel(file_path)
+    
+    # Calculate age from birthdate
+    data['Birthdate'] = pd.to_datetime(data['Birthdate'])
+    today = datetime.today()
+    data['Age'] = data['Birthdate'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
+    
+    # Assign positions to multiple groups
+    data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
+    
+    # Convert text-based numbers to numeric
+    physical_metrics = ['Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
+                        'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
+                        'Medium Deceleration Count', 'High Deceleration Count', 'Distance OTIP', 'M/min OTIP',
+                        'HSR Distance OTIP', 'HSR Count OTIP', 'Sprint Distance OTIP', 'Sprint Count OTIP',
+                        'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP',
+                        'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP',
+                        'PSV-99']
 
-# Calculate Goal Threat score
-goal_threat_metrics = [
-    'Goal', 'Shot', 'SOG', 'OnTarget%'
-]
+    for metric in physical_metrics:
+        data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
+    
+    # Calculate additional metrics
+    data['OnTarget%'] = (data['SOG'] / data['Shot']) * 100
+    data['TcklMade%'] = (data['Tckl'] / data['TcklAtt']) * 100
+    data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
+    
+    return data, physical_metrics
 
-weights = {
-    'Goal': 2,        # Double weight for 'Goal'
-    'Shot': 1,
-    'SOG': 1,
-    'OnTarget%': 1
-}
+# Load the data with caching
+data, physical_metrics = load_data('data_newsletter.xlsx')
 
-# Normalize and calculate the weighted Goal Threat score
-normalized_goal = scaler.fit_transform(quantile_transformer.fit_transform(data[['Goal']].fillna(0))) * weights['Goal']
-normalized_shot = scaler.fit_transform(quantile_transformer.fit_transform(data[['Shot']].fillna(0))) * weights['Shot']
-normalized_sog = scaler.fit_transform(quantile_transformer.fit_transform(data[['SOG']].fillna(0))) * weights['SOG']
-normalized_ontarget = scaler.fit_transform(quantile_transformer.fit_transform(data[['OnTarget%']].fillna(0))) * weights['OnTarget%']
+@st.cache_data
+def calculate_scores(data, physical_metrics, offensive_metrics, defensive_metrics):
+    scaler = MinMaxScaler(feature_range=(0, 10))
+    quantile_transformer = QuantileTransformer(output_distribution='uniform')
+    
+    # Calculate physical offensive score
+    data['Physical Offensive Score'] = scaler.fit_transform(
+        quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+    ).mean(axis=1)
+    
+    # Calculate physical defensive score
+    data['Physical Defensive Score'] = scaler.fit_transform(
+        quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+    ).mean(axis=1)
+    
+    # Calculate offensive score
+    data['Offensive Score'] = scaler.fit_transform(
+        quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
+    ).mean(axis=1)
+    
+    # Calculate defensive score
+    data['Defensive Score'] = scaler.fit_transform(
+        quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
+    ).mean(axis=1)
+    
+    # Calculate Goal Threat score
+    goal_threat_metrics = [
+        'Goal', 'Shot', 'SOG', 'OnTarget%'
+    ]
+    
+    weights = {
+        'Goal': 2,        # Double weight for 'Goal'
+        'Shot': 1,
+        'SOG': 1,
+        'OnTarget%': 1
+    }
+    
+    # Normalize and calculate the weighted Goal Threat score
+    normalized_goal = scaler.fit_transform(quantile_transformer.fit_transform(data[['Goal']].fillna(0))) * weights['Goal']
+    normalized_shot = scaler.fit_transform(quantile_transformer.fit_transform(data[['Shot']].fillna(0))) * weights['Shot']
+    normalized_sog = scaler.fit_transform(quantile_transformer.fit_transform(data[['SOG']].fillna(0))) * weights['SOG']
+    normalized_ontarget = scaler.fit_transform(quantile_transformer.fit_transform(data[['OnTarget%']].fillna(0))) * weights['OnTarget%']
+    
+    data['Goal Threat'] = (
+        normalized_goal +
+        normalized_shot +
+        normalized_sog +
+        normalized_ontarget
+    ).mean(axis=1) / sum(weights.values())
+    
+    scores = ['Offensive Score', 'Defensive Score', 'Goal Threat', 'Physical Offensive Score', 'Physical Defensive Score']
+    
+    return data, scores
 
-data['Goal Threat'] = (
-    normalized_goal +
-    normalized_shot +
-    normalized_sog +
-    normalized_ontarget
-).mean(axis=1) / sum(weights.values())
-
-# Score List (reordered)
-scores = ['Offensive Score', 'Defensive Score', 'Goal Threat', 'Physical Offensive Score', 'Physical Defensive Score']
+# Calculate the scores with caching
+data, scores = calculate_scores(data, physical_metrics, offensive_metrics, defensive_metrics)
 
 # User authentication (basic example)
 def authenticate(username, password):
@@ -237,7 +249,7 @@ else:
             league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
         ]
 
-        metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
+        metrics = ['PSV-99'] + physical_metrics + offensive_metrics + defensive_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
                                                    'ProgCarry', 'TakeOn', 'Success1v1', 
                                                    'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
@@ -298,10 +310,11 @@ else:
                         )
                         plt.close(fig)
 
-        display_metric_tables(scores, "Score Metrics")
-        display_metric_tables(physical_metrics, "Physical Metrics")
-        display_metric_tables(offensive_metrics, "Offensive Metrics")
-        display_metric_tables(defensive_metrics, "Defensive Metrics")
+        if selected_matchday and selected_position_group:
+            display_metric_tables(scores, "Score Metrics")
+            display_metric_tables(physical_metrics, "Physical Metrics")
+            display_metric_tables(offensive_metrics, "Offensive Metrics")
+            display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section now placed below the metrics tables
     with col2:

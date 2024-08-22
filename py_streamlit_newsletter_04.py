@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
 from io import BytesIO
+import requests
 import matplotlib.pyplot as plt
 
 # Function to apply custom CSS for mobile responsiveness and tooltips
@@ -94,8 +95,15 @@ defensive_metrics = [
 # Function to load data from a GitHub repository and cache it
 @st.cache_data
 def load_data_from_github(url):
-    # Load the dataset
-    data = pd.read_excel(url)
+    # Fetch the content from the URL
+    response = requests.get(url)
+    
+    if response.status_code != 200:
+        st.error(f"Error fetching data: {response.status_code}")
+        return None, None
+    
+    # Read the content as a pandas dataframe
+    data = pd.read_excel(BytesIO(response.content))
     
     # Calculate age from birthdate
     data['Birthdate'] = pd.to_datetime(data['Birthdate'])
@@ -124,7 +132,7 @@ def load_data_from_github(url):
     
     return data, physical_metrics
 
-# Example URL: Replace with your actual GitHub raw file link
+# Use the actual GitHub raw file link
 url = 'https://raw.githubusercontent.com/timurna/news-fcb/340bc2b2c6c1a2ac0395de33cff68b9684abbc41/data_newsletter.xlsx'
 
 # Load the data with caching

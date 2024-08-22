@@ -43,9 +43,9 @@ glossary = {
     # Add explanations for other metrics...
 }
 
-# Load the dataset
-file_path = 'data_newsletter.xlsx'
-data = pd.read_excel(file_path)
+# Load the dataset from Parquet
+file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/5957cf863d06024514fb853bc949655e9a8609fc/test.parquet'
+data = pd.read_parquet(file_path)
 
 # Calculate age from birthdate
 data['Birthdate'] = pd.to_datetime(data['Birthdate'])

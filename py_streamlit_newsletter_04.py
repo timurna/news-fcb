@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
-import matplotlib.pyplot as plt
 from io import BytesIO
+import matplotlib.pyplot as plt
 from PIL import Image
 
-# Function to apply custom CSS for mobile responsiveness
+# Function to apply custom CSS for mobile responsiveness and tooltips
 def set_mobile_css():
     st.markdown(
         """
@@ -28,6 +28,31 @@ def set_mobile_css():
                 font-size: 0.8em !important;
             }
         }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted black;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
         </style>
         """, unsafe_allow_html=True
     )
@@ -38,6 +63,7 @@ glossary = {
     'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
     'Offensive Score': 'A score representing a player\'s overall offensive performance.',
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
+    'Goal Threat': 'A score representing a player\'s goal-scoring potential based on key metrics like goals, shots, shots on goal, and accuracy.',
     'Distance': 'Total distance covered by the player during the match.',
     'M/min': 'Meters covered per minute by the player.',
     # Add explanations for other metrics...
@@ -118,6 +144,34 @@ data['Defensive Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
 ).mean(axis=1)
 
+# Calculate Goal Threat score
+goal_threat_metrics = [
+    'Goal', 'Shot', 'SOG', 'OnTarget%'
+]
+
+weights = {
+    'Goal': 2,        # Double weight for 'Goal'
+    'Shot': 1,
+    'SOG': 1,
+    'OnTarget%': 1
+}
+
+# Normalize and calculate the weighted Goal Threat score
+normalized_goal = scaler.fit_transform(quantile_transformer.fit_transform(data[['Goal']].fillna(0))) * weights['Goal']
+normalized_shot = scaler.fit_transform(quantile_transformer.fit_transform(data[['Shot']].fillna(0))) * weights['Shot']
+normalized_sog = scaler.fit_transform(quantile_transformer.fit_transform(data[['SOG']].fillna(0))) * weights['SOG']
+normalized_ontarget = scaler.fit_transform(quantile_transformer.fit_transform(data[['OnTarget%']].fillna(0))) * weights['OnTarget%']
+
+data['Goal Threat'] = (
+    normalized_goal +
+    normalized_shot +
+    normalized_sog +
+    normalized_ontarget
+).mean(axis=1) / sum(weights.values())
+
+# Score List (reordered)
+scores = ['Offensive Score', 'Defensive Score', 'Goal Threat', 'Physical Offensive Score', 'Physical Defensive Score']
+
 # User authentication (basic example)
 def authenticate(username, password):
     return username == "fcbscouting24" and password == "fcbnews24"
@@ -183,7 +237,6 @@ else:
             league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
         ]
 
-        scores = ['Physical Offensive Score', 'Physical Defensive Score', 'Offensive Score', 'Defensive Score']
         metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
                                                    'ProgCarry', 'TakeOn', 'Success1v1', 
@@ -196,6 +249,7 @@ else:
 
         all_metrics = scores + metrics
 
+        # Tooltip headers from the glossary
         tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
         def display_metric_tables(metrics_list, title):
@@ -209,21 +263,40 @@ else:
                         st.header(f"Top 10 Players in {metric}")
                         st.write("No data available")
                     else:
+                        # Add tooltip to the header
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
                         top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
+                        # Create HTML table with tooltips for headers
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
                         top10_styled = top10.style.apply(color_row, axis=1)
                         top10_html = top10_styled.to_html()
 
+                        # Add tooltips to the headers
                         for header, tooltip in tooltip_headers.items():
                             if tooltip:
                                 top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
 
                         st.write(top10_html, unsafe_allow_html=True)
+
+                        # Add a download button for the table
+                        buffer = BytesIO()
+                        fig, ax = plt.subplots(figsize=(10, 4))
+                        ax.axis('tight')
+                        ax.axis('off')
+                        ax.table(cellText=top10.values, colLabels=top10.columns, cellLoc='center', loc='center')
+                        plt.savefig(buffer, format='png')
+                        buffer.seek(0)
+                        st.download_button(
+                            label="Download Table as PNG",
+                            data=buffer,
+                            file_name=f"{metric}_top10.png",
+                            mime="image/png"
+                        )
+                        plt.close(fig)
 
         display_metric_tables(scores, "Score Metrics")
         display_metric_tables(physical_metrics, "Physical Metrics")

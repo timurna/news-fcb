@@ -4,7 +4,6 @@ from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
 from io import BytesIO
 import matplotlib.pyplot as plt
-from PIL import Image
 
 # Function to apply custom CSS for mobile responsiveness and tooltips
 def set_mobile_css():

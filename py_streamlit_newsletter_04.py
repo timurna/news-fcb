@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
-from io import BytesIO
 import matplotlib.pyplot as plt
+from io import BytesIO
 from PIL import Image
 
-# Function to apply custom CSS for mobile responsiveness and tooltips
+# Function to apply custom CSS for mobile responsiveness
 def set_mobile_css():
     st.markdown(
         """
@@ -28,31 +28,6 @@ def set_mobile_css():
                 font-size: 0.8em !important;
             }
         }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            border-bottom: 1px dotted black;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 120px;
-            background-color: black;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 0;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -60px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
         </style>
         """, unsafe_allow_html=True
     )
@@ -63,13 +38,21 @@ glossary = {
     'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
     'Offensive Score': 'A score representing a player\'s overall offensive performance.',
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
-    'Goal Threat': 'A score representing a player\'s goal-scoring potential based on key metrics like goals, shots, shots on goal, and accuracy.',
     'Distance': 'Total distance covered by the player during the match.',
     'M/min': 'Meters covered per minute by the player.',
     # Add explanations for other metrics...
 }
 
-# Define position groups globally so they can be used throughout the script
+# Load the dataset
+file_path = 'data_newsletter.xlsx'
+data = pd.read_excel(file_path)
+
+# Calculate age from birthdate
+data['Birthdate'] = pd.to_datetime(data['Birthdate'])
+today = datetime.today()
+data['Age'] = data['Birthdate'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
+
+# Define position groups with potential overlaps
 position_groups = {
     'IV': ['LCB', 'RCB', 'CB'],
     'AV': ['LB', 'RB'],
@@ -83,106 +66,57 @@ position_groups = {
     'ST': ['CF', 'LF', 'RF']
 }
 
-# Define offensive and defensive metrics globally
+# Assign positions to multiple groups
+data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
+
+# Convert text-based numbers to numeric
+physical_metrics = ['Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
+                    'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
+                    'Medium Deceleration Count', 'High Deceleration Count', 'Distance OTIP', 'M/min OTIP',
+                    'HSR Distance OTIP', 'HSR Count OTIP', 'Sprint Distance OTIP', 'Sprint Count OTIP',
+                    'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP',
+                    'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP',
+                    'PSV-99']
+
+for metric in physical_metrics:
+    data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
+
+# Calculate additional metrics
+data['OnTarget%'] = (data['SOG'] / data['Shot']) * 100
+data['TcklMade%'] = (data['Tckl'] / data['TcklAtt']) * 100
+data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
+
+# Normalize and calculate the scores
+scaler = MinMaxScaler(feature_range=(0, 10))
+quantile_transformer = QuantileTransformer(output_distribution='uniform')
+
+# Calculate physical offensive score
+data['Physical Offensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+).mean(axis=1)
+
+# Calculate physical defensive score
+data['Physical Defensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+).mean(axis=1)
+
+# Calculate offensive score
 offensive_metrics = [
     'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
 ]
 
+data['Offensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
+).mean(axis=1)
+
+# Calculate defensive score
 defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
 
-@st.cache_data
-def load_data(file_path):
-    # Load the dataset
-    data = pd.read_excel(file_path)
-    
-    # Calculate age from birthdate
-    data['Birthdate'] = pd.to_datetime(data['Birthdate'])
-    today = datetime.today()
-    data['Age'] = data['Birthdate'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
-    
-    # Assign positions to multiple groups
-    data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
-    
-    # Convert text-based numbers to numeric
-    physical_metrics = ['Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
-                        'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
-                        'Medium Deceleration Count', 'High Deceleration Count', 'Distance OTIP', 'M/min OTIP',
-                        'HSR Distance OTIP', 'HSR Count OTIP', 'Sprint Distance OTIP', 'Sprint Count OTIP',
-                        'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP',
-                        'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP',
-                        'PSV-99']
-
-    for metric in physical_metrics:
-        data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
-    
-    # Calculate additional metrics
-    data['OnTarget%'] = (data['SOG'] / data['Shot']) * 100
-    data['TcklMade%'] = (data['Tckl'] / data['TcklAtt']) * 100
-    data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
-    
-    return data, physical_metrics
-
-# Load the data with caching
-data, physical_metrics = load_data('data_newsletter.xlsx')
-
-@st.cache_data
-def calculate_scores(data, physical_metrics, offensive_metrics, defensive_metrics):
-    scaler = MinMaxScaler(feature_range=(0, 10))
-    quantile_transformer = QuantileTransformer(output_distribution='uniform')
-    
-    # Calculate physical offensive score
-    data['Physical Offensive Score'] = scaler.fit_transform(
-        quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-    ).mean(axis=1)
-    
-    # Calculate physical defensive score
-    data['Physical Defensive Score'] = scaler.fit_transform(
-        quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-    ).mean(axis=1)
-    
-    # Calculate offensive score
-    data['Offensive Score'] = scaler.fit_transform(
-        quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
-    ).mean(axis=1)
-    
-    # Calculate defensive score
-    data['Defensive Score'] = scaler.fit_transform(
-        quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
-    ).mean(axis=1)
-    
-    # Calculate Goal Threat score
-    goal_threat_metrics = [
-        'Goal', 'Shot', 'SOG', 'OnTarget%'
-    ]
-    
-    weights = {
-        'Goal': 2,        # Double weight for 'Goal'
-        'Shot': 1,
-        'SOG': 1,
-        'OnTarget%': 1
-    }
-    
-    # Normalize and calculate the weighted Goal Threat score
-    normalized_goal = scaler.fit_transform(quantile_transformer.fit_transform(data[['Goal']].fillna(0))) * weights['Goal']
-    normalized_shot = scaler.fit_transform(quantile_transformer.fit_transform(data[['Shot']].fillna(0))) * weights['Shot']
-    normalized_sog = scaler.fit_transform(quantile_transformer.fit_transform(data[['SOG']].fillna(0))) * weights['SOG']
-    normalized_ontarget = scaler.fit_transform(quantile_transformer.fit_transform(data[['OnTarget%']].fillna(0))) * weights['OnTarget%']
-    
-    data['Goal Threat'] = (
-        normalized_goal +
-        normalized_shot +
-        normalized_sog +
-        normalized_ontarget
-    ).mean(axis=1) / sum(weights.values())
-    
-    scores = ['Offensive Score', 'Defensive Score', 'Goal Threat', 'Physical Offensive Score', 'Physical Defensive Score']
-    
-    return data, scores
-
-# Calculate the scores with caching
-data, scores = calculate_scores(data, physical_metrics, offensive_metrics, defensive_metrics)
+data['Defensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
+).mean(axis=1)
 
 # User authentication (basic example)
 def authenticate(username, password):
@@ -249,7 +183,8 @@ else:
             league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
         ]
 
-        metrics = ['PSV-99'] + physical_metrics + offensive_metrics + defensive_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
+        scores = ['Physical Offensive Score', 'Physical Defensive Score', 'Offensive Score', 'Defensive Score']
+        metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
                                                    'ProgCarry', 'TakeOn', 'Success1v1', 
                                                    'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
@@ -261,7 +196,6 @@ else:
 
         all_metrics = scores + metrics
 
-        # Tooltip headers from the glossary
         tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
         def display_metric_tables(metrics_list, title):
@@ -275,46 +209,26 @@ else:
                         st.header(f"Top 10 Players in {metric}")
                         st.write("No data available")
                     else:
-                        # Add tooltip to the header
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
                         top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
-                        # Create HTML table with tooltips for headers
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
                         top10_styled = top10.style.apply(color_row, axis=1)
                         top10_html = top10_styled.to_html()
 
-                        # Add tooltips to the headers
                         for header, tooltip in tooltip_headers.items():
                             if tooltip:
                                 top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
 
                         st.write(top10_html, unsafe_allow_html=True)
 
-                        # Add a download button for the table
-                        buffer = BytesIO()
-                        fig, ax = plt.subplots(figsize=(10, 4))
-                        ax.axis('tight')
-                        ax.axis('off')
-                        ax.table(cellText=top10.values, colLabels=top10.columns, cellLoc='center', loc='center')
-                        plt.savefig(buffer, format='png')
-                        buffer.seek(0)
-                        st.download_button(
-                            label="Download Table as PNG",
-                            data=buffer,
-                            file_name=f"{metric}_top10.png",
-                            mime="image/png"
-                        )
-                        plt.close(fig)
-
-        if selected_matchday and selected_position_group:
-            display_metric_tables(scores, "Score Metrics")
-            display_metric_tables(physical_metrics, "Physical Metrics")
-            display_metric_tables(offensive_metrics, "Offensive Metrics")
-            display_metric_tables(defensive_metrics, "Defensive Metrics")
+        display_metric_tables(scores, "Score Metrics")
+        display_metric_tables(physical_metrics, "Physical Metrics")
+        display_metric_tables(offensive_metrics, "Offensive Metrics")
+        display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section now placed below the metrics tables
     with col2:

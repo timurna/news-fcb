@@ -4,3 +4,7 @@ numpy
 scikit-learn
 openpyxl
 matplotlib
+Pillow
+xlrd
+toolz
+altair

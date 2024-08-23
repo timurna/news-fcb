@@ -69,7 +69,7 @@ glossary = {
 }
 
 # Load the dataset from Parquet
-file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/main/test.parquet'
+file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/main/test-old.parquet'
 data = pd.read_parquet(file_path)
 
 # Calculate age from birthdate

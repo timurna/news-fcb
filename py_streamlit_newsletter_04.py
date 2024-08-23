@@ -202,8 +202,12 @@ else:
             position_group_options = list(position_groups.keys())
             selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
 
-    selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
-    league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
+    # Filter the data by the selected position group
+    league_and_position_data = data[
+        (data['Competition'] == selected_league) &
+        (data['Week'] == selected_week) &
+        (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
+    ]
 
     # Use a container to make the expandable sections span the full width
     with st.container():

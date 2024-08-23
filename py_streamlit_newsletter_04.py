@@ -180,7 +180,7 @@ else:
 
         # Week Summary and Matchday Filtering Logic
         week_summary = league_data.groupby(['Competition', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
-        week_summary.columns = ['newestLeague', 'Week', 'min', 'max']
+        week_summary.columns = ['Competition', 'Week', 'min', 'max']
 
         week_summary['min'] = pd.to_datetime(week_summary['min'])
         week_summary['max'] = pd.to_datetime(week_summary['max'])
@@ -195,7 +195,7 @@ else:
         selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
 
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
-    league_and_position_data = data[(data['newestLeague'] == selected_league) & (data['Week'] == selected_week)]
+    league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
 
     # Now define the layout with columns, starting with the filters
     col1, col2 = st.columns([1, 3])

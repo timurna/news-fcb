@@ -204,8 +204,8 @@ else:
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
     league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
 
-    # Metrics tables in the second column
-    with col2:
+    # Use a container to make the expandable sections span the full width
+    with st.container():
         scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
         metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
@@ -222,7 +222,7 @@ else:
         tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
         def display_metric_tables(metrics_list, title):
-            with st.expander(title):
+            with st.expander(title, expanded=True):  # Setting expanded=True to make it open by default
                 for metric in metrics_list:
                     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
@@ -254,7 +254,6 @@ else:
         display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section now placed below the metrics tables
-    with col2:
-        with st.expander("Glossary"):
-            for metric, explanation in glossary.items():
-                st.markdown(f"**{metric}:** {explanation}")
+    with st.expander("Glossary"):
+        for metric, explanation in glossary.items():
+            st.markdown(f"**{metric}:** {explanation}")

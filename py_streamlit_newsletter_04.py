@@ -253,5 +253,5 @@ else:
 
     # Glossary section now placed below the metrics tables
     with st.expander("Glossary"):
-        for metric, explanation in glossary.items():
+        for metric, explanation in glossary items():
             st.markdown(f"**{metric}:** {explanation}")

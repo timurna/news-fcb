@@ -172,15 +172,15 @@ else:
     col_filters1, col_filters2 = st.columns([1, 1])
 
     with col_filters1:
-        leagues = data['Competition'].unique()
+        leagues = data['League'].unique()
         selected_league = st.selectbox("Select League", leagues, key="select_league")
     
     with col_filters2:
-        league_data = data[data['Competition'] == selected_league]
+        league_data = data[data['League'] == selected_league]
 
         # Week Summary and Matchday Filtering Logic
-        week_summary = league_data.groupby(['Competition', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
-        week_summary.columns = ['Competition', 'Week', 'min', 'max']
+        week_summary = league_data.groupby(['League', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+        week_summary.columns = ['League', 'Week', 'min', 'max']
 
         week_summary['min'] = pd.to_datetime(week_summary['min'])
         week_summary['max'] = pd.to_datetime(week_summary['max'])
@@ -189,13 +189,13 @@ else:
             lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
         )
 
-        filtered_weeks = week_summary[week_summary['Competition'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
+        filtered_weeks = week_summary[week_summary['League'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
 
         matchday_options = filtered_weeks['Matchday'].tolist()
         selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
 
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
-    league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
+    league_and_position_data = data[(data['League'] == selected_league) & (data['Week'] == selected_week)]
 
     # Now define the layout with columns, starting with the filters
     col1, col2 = st.columns([1, 3])

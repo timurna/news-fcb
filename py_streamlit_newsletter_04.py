@@ -205,13 +205,6 @@ else:
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
     league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
 
-    # Debugging: Print the columns and a few rows of league_and_position_data
-    st.write("Available columns in league_and_position_data:")
-    st.write(league_and_position_data.columns)
-
-    st.write("First few rows of league_and_position_data:")
-    st.write(league_and_position_data.head())
-
     # Use a container to make the expandable sections span the full width
     with st.container():
         scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']

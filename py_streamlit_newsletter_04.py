@@ -204,6 +204,9 @@ else:
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
     league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
 
+    # Metrics tables and other content follow...
+
+
         scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
         metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 

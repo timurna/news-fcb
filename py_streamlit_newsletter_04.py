@@ -205,23 +205,67 @@ else:
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
     league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
 
-    # Now define the layout with columns, starting with the filters
-    col1, col2 = st.columns([1, 3])
+    # Debugging: Print the columns and a few rows of league_and_position_data
+    st.write("Available columns in league_and_position_data:")
+    st.write(league_and_position_data.columns)
 
-    # Metrics tables in the second column, spanning full width
+    st.write("First few rows of league_and_position_data:")
+    st.write(league_and_position_data.head())
+
+    # Use a container to make the expandable sections span the full width
     with st.container():
-        with col1:
-            display_metric_tables(scores, "Score Metrics")
-            display_metric_tables(physical_metrics, "Physical Metrics")
-            display_metric_tables(offensive_metrics, "Offensive Metrics")
-            display_metric_tables(defensive_metrics, "Defensive Metrics")
-        
-        with col2:
-            st.write("")  # Leave empty
+        scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
+        metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
+                                                   'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
+                                                   'ProgCarry', 'TakeOn', 'Success1v1', 
+                                                   'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
+                                                   'Blocks', 'Int', 'AdjInt', 'Clrnce', 
+                                                   'Goal', 'Shot/Goal', 'MinPerGoal', 'GoalExPn', 
+                                                   'ExpG', 'xGOT', 'ExpGExPn', 'xG +/-', 
+                                                   'Shot', 'SOG', 'Shot conversion', 'Ast', 'xA',
+                                                   'OnTarget%', 'TcklMade%', 'Pass%']
+
+        all_metrics = scores + metrics
+
+        tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
+
+        def display_metric_tables(metrics_list, title):
+            with st.expander(title, expanded=True):  # Setting expanded=True to make it open by default
+                for metric in metrics_list:
+                    if metric not in league_and_position_data.columns:
+                        st.write(f"Metric {metric} not found in the data")
+                        continue
+
+                    league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
+
+                    top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+
+                    if top10.empty:
+                        st.header(f"Top 10 Players in {metric}")
+                        st.write("No data available")
+                    else:
+                        st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+                        top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
+                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
+
+                        def color_row(row):
+                            return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
+
+                        top10_styled = top10.style.apply(color_row, axis=1)
+                        top10_html = top10_styled.to_html()
+
+                        for header, tooltip in tooltip_headers.items():
+                            if tooltip:
+                                top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
+
+                        st.write(top10_html, unsafe_allow_html=True)
+
+        display_metric_tables(scores, "Score Metrics")
+        display_metric_tables(physical_metrics, "Physical Metrics")
+        display_metric_tables(offensive_metrics, "Offensive Metrics")
+        display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section now placed below the metrics tables
-    with st.container():
-        with col1:
-            st.expander("Glossary"):
-                for metric, explanation in glossary.items():
-                    st.markdown(f"**{metric}:** {explanation}")
+    with st.expander("Glossary"):
+        for metric, explanation in glossary.items():
+            st.markdown(f"**{metric}:** {explanation}")

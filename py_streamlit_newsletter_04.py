@@ -69,13 +69,13 @@ glossary = {
 }
 
 # Load the dataset from Parquet
-file_path = 'test.parquet'
+file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/5957cf863d06024514fb853bc949655e9a8609fc/test.parquet'
 data = pd.read_parquet(file_path)
 
 # Calculate age from birthdate
-data['DOB'] = pd.to_datetime(data['Birthdate'])
+data['Birthdate'] = pd.to_datetime(data['Birthdate'])
 today = datetime.today()
-data['Age'] = data['DOB'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
+data['Age'] = data['Birthdate'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
 
 # Define position groups with potential overlaps
 position_groups = {
@@ -172,15 +172,15 @@ else:
     col_filters1, col_filters2 = st.columns([1, 1])
 
     with col_filters1:
-        leagues = data['League'].unique()
+        leagues = data['newestLeague'].unique()
         selected_league = st.selectbox("Select League", leagues, key="select_league")
     
     with col_filters2:
-        league_data = data[data['League'] == selected_league]
+        league_data = data[data['newestLeague'] == selected_league]
 
         # Week Summary and Matchday Filtering Logic
-        week_summary = league_data.groupby(['League', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
-        week_summary.columns = ['League', 'Week', 'min', 'max']
+        week_summary = league_data.groupby(['newestLeague', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+        week_summary.columns = ['newestLeague', 'Week', 'min', 'max']
 
         week_summary['min'] = pd.to_datetime(week_summary['min'])
         week_summary['max'] = pd.to_datetime(week_summary['max'])
@@ -189,13 +189,13 @@ else:
             lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
         )
 
-        filtered_weeks = week_summary[week_summary['League'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
+        filtered_weeks = week_summary[week_summary['newestLeague'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
 
         matchday_options = filtered_weeks['Matchday'].tolist()
         selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
 
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
-    league_and_position_data = data[(data['League'] == selected_league) & (data['Week'] == selected_week)]
+    league_and_position_data = data[(data['newestLeague'] == selected_league) & (data['Week'] == selected_week)]
 
     # Now define the layout with columns, starting with the filters
     col1, col2 = st.columns([1, 3])

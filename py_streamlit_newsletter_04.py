@@ -10,10 +10,18 @@ from PIL import Image
 st.set_page_config(layout="wide")
 
 # Function to apply custom CSS for mobile responsiveness
-def set_mobile_css():
+def set_custom_css():
     st.markdown(
         """
         <style>
+        /* Custom CSS for reducing space between filter labels and dropdowns */
+        .stSelectbox label {
+            margin-bottom: 0px !important;
+        }
+        .stSelectbox div[data-testid="stMarkdownContainer"] {
+            margin-bottom: 0px !important;
+        }
+        /* Mobile responsiveness */
         @media only screen and (max-width: 600px) {
             .stApp {
                 padding: 0 10px;

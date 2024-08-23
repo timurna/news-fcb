@@ -198,6 +198,8 @@ else:
             matchday_options = filtered_weeks['Matchday'].tolist()
             selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
 
+            selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
+
         with col3:
             position_group_options = list(position_groups.keys())
             selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")

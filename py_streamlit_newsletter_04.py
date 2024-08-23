@@ -171,39 +171,46 @@ else:
     # Display the logo at the top
     st.image('FCBayern-Wortmarke-SF-ANSICHT.png', use_column_width=False, width=800)
 
-    # Create a single row for all the filters
-    with st.container():
-        col1, col2, col3 = st.columns([1, 1, 2])
+    # Define the filters to get user input before displaying metrics
+    col_filters1, col_filters2 = st.columns([1, 1])
 
-        with col1:
-            leagues = sorted(data['Competition'].unique())  # Sort leagues alphabetically
-            selected_league = st.selectbox("Select League", leagues, key="select_league")
+    with col_filters1:
+        leagues = sorted(data['Competition'].unique())  # Sort leagues alphabetically
+        selected_league = st.selectbox("Select League", leagues, key="select_league")
+    
+    with col_filters2:
+        league_data = data[data['Competition'] == selected_league]
 
-        with col2:
-            league_data = data[data['Competition'] == selected_league]
+        # Week Summary and Matchday Filtering Logic
+        week_summary = league_data.groupby(['Competition', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+        week_summary.columns = ['Competition', 'Week', 'min', 'max']
 
-            # Week Summary and Matchday Filtering Logic
-            week_summary = league_data.groupby(['Competition', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
-            week_summary.columns = ['Competition', 'Week', 'min', 'max']
+        week_summary['min'] = pd.to_datetime(week_summary['min'])
+        week_summary['max'] = pd.to_datetime(week_summary['max'])
 
-            week_summary['min'] = pd.to_datetime(week_summary['min'])
-            week_summary['max'] = pd.to_datetime(week_summary['max'])
+        week_summary['Matchday'] = week_summary.apply(
+            lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
+        )
 
-            week_summary['Matchday'] = week_summary.apply(
-                lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
-            )
+        filtered_weeks = week_summary[week_summary['Competition'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
 
-            filtered_weeks = week_summary[week_summary['Competition'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
+        matchday_options = filtered_weeks['Matchday'].tolist()
+        selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
 
-            matchday_options = filtered_weeks['Matchday'].tolist()
-            selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
+    selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
+    league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
 
-        with col3:
-            position_group_options = list(position_groups.keys())
-            selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
+    # Now define the layout with columns, starting with the filters
+    col1, col2 = st.columns([1, 3])
 
-    # Use a container to make the expandable sections span the full width
-    with st.container():
+    # Metrics tables in the second column
+    with col2:
+        position_group_options = list(position_groups.keys())
+        selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
+        league_and_position_data = league_and_position_data[
+            league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
+        ]
+
         scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
         metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
@@ -220,7 +227,7 @@ else:
         tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
         def display_metric_tables(metrics_list, title):
-            with st.expander(title, expanded=True):  # Setting expanded=True to make it open by default
+            with st.expander(title):
                 for metric in metrics_list:
                     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
@@ -252,6 +259,7 @@ else:
         display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section now placed below the metrics tables
-    with st.expander("Glossary"):
-        for metric, explanation in glossary.items():
-            st.markdown(f"**{metric}:** {explanation}")
+    with col2:
+        with st.expander("Glossary"):
+            for metric, explanation in glossary.items():
+                st.markdown(f"**{metric}:** {explanation}")

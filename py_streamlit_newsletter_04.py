@@ -172,8 +172,8 @@ else:
     col_filters1, col_filters2 = st.columns([1, 1])
 
     with col_filters1:
-        leagues = data['Competition'].unique()
-        selected_league = st.selectbox("Select League", leagues, key="select_league")
+    leagues = sorted(data['Competition'].unique())  # Sort leagues alphabetically
+    selected_league = st.selectbox("Select League", leagues, key="select_league")
     
     with col_filters2:
         league_data = data[data['Competition'] == selected_league]

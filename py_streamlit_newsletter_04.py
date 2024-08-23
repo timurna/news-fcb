@@ -173,13 +173,15 @@ else:
 
     # Create a single row for all the filters
     with st.container():
-        col1, col2, col3 = st.columns([1, 1, 1])
+        col1, col2, col3 = st.columns([1, 1, 2])
 
         with col1:
+            st.markdown("**Select League**")
             leagues = sorted(data['Competition'].unique())  # Sort leagues alphabetically
-            selected_league = st.selectbox("Select League", leagues, key="select_league")
+            selected_league = st.selectbox("", leagues, key="select_league")
 
         with col2:
+            st.markdown("**Select Matchday**")
             league_data = data[data['Competition'] == selected_league]
 
             # Week Summary and Matchday Filtering Logic
@@ -196,11 +198,12 @@ else:
             filtered_weeks = week_summary[week_summary['Competition'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
 
             matchday_options = filtered_weeks['Matchday'].tolist()
-            selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
+            selected_matchday = st.selectbox("", matchday_options, key="select_matchday")
 
         with col3:
+            st.markdown("**Select Position Group**")
             position_group_options = list(position_groups.keys())
-            selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
+            selected_position_group = st.selectbox("", position_group_options, key="select_position_group")
 
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
     league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]

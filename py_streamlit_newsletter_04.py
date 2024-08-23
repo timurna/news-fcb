@@ -171,14 +171,14 @@ else:
     # Display the logo at the top
     st.image('FCBayern-Wortmarke-SF-ANSICHT.png', use_column_width=False, width=800)
 
-    # Define the filters to get user input before displaying metrics
-    col_filters1, col_filters2 = st.columns([1, 1])
+    # Align all filters in a single row
+    col1, col2, col3 = st.columns([1, 1, 2])
 
-    with col_filters1:
+    with col1:
         leagues = sorted(data['Competition'].unique())  # Sort leagues alphabetically
         selected_league = st.selectbox("Select League", leagues, key="select_league")
-    
-    with col_filters2:
+
+    with col2:
         league_data = data[data['Competition'] == selected_league]
 
         # Week Summary and Matchday Filtering Logic
@@ -197,20 +197,15 @@ else:
         matchday_options = filtered_weeks['Matchday'].tolist()
         selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
 
+    with col3:
+        position_group_options = list(position_groups.keys())
+        selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
+
     selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
     league_and_position_data = data[(data['Competition'] == selected_league) & (data['Week'] == selected_week)]
 
-    # Now define the layout with columns, starting with the filters
-    col1, col2 = st.columns([1, 3])
-
     # Metrics tables in the second column
     with col2:
-        position_group_options = list(position_groups.keys())
-        selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
-        league_and_position_data = league_and_position_data[
-            league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
-        ]
-
         scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
         metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 

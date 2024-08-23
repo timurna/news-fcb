@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from PIL import Image
 
+# Set the page configuration to wide mode
+st.set_page_config(layout="wide")
+
 # Function to apply custom CSS for mobile responsiveness
 def set_mobile_css():
     st.markdown(

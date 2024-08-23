@@ -73,9 +73,14 @@ file_path = 'test.parquet'
 data = pd.read_parquet(file_path)
 
 # Calculate age from birthdate
-data['Birthdate'] = pd.to_datetime(data['Birthdate'])
-today = datetime.today()
-data['Age'] = data['Birthdate'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
+# Check if 'DOB' column exists
+if 'DOB' in data.columns:
+    # Calculate age from DOB
+    data['DOB'] = pd.to_datetime(data['DOB'])
+    today = datetime.today()
+    data['Age'] = data['DOB'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
+else:
+    st.warning("'DOB' column is missing from the dataset. Age calculation skipped.")
 
 # Define position groups with potential overlaps
 position_groups = {

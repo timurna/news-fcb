@@ -8,3 +8,5 @@ Pillow
 xlrd
 toolz
 altair
+pyarrow
+fastparquet

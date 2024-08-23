@@ -59,10 +59,10 @@ def set_mobile_css():
 
 # Glossary content
 glossary = {
-    'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
-    'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
     'Offensive Score': 'A score representing a player\'s overall offensive performance.',
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
+    'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
+    'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
     'Distance': 'Total distance covered by the player during the match.',
     'M/min': 'Meters covered per minute by the player.',
     # Add explanations for other metrics...
@@ -208,7 +208,7 @@ else:
             league_and_position_data['Position Groups'].apply(lambda groups: selected_position_group in groups)
         ]
 
-        scores = ['Physical Offensive Score', 'Physical Defensive Score', 'Offensive Score', 'Defensive Score']
+        scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
         metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
                                                    'ProgCarry', 'TakeOn', 'Success1v1', 

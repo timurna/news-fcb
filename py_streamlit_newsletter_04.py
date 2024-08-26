@@ -222,6 +222,27 @@ data['Defensive Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
 ).mean(axis=1)
 
+# Calculate goal threat score
+goal_threat_metrics = {
+    'Goal': 2,  # Higher weight for goals
+    'Shot/Goal': 1,
+    'ExpG': 1,
+    'Shot': 1,
+    'SOG': 1,
+    'Shot conversion': 1,
+    'OnTarget%': 1
+}
+
+# Create a weighted sum of the metrics
+goal_threat_values = sum(weight * quantile_transformer.fit_transform(data[[metric]].fillna(0)) 
+                         for metric, weight in goal_threat_metrics.items())
+
+# Normalize the goal threat score
+data['Goal Threat Score'] = scaler.fit_transform(goal_threat_values).mean(axis=1)
+
+# Add Goal Threat Score to scores list
+scores = ['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
+
 # User authentication (basic example)
 def authenticate(username, password):
     return username == "fcbscouting24" and password == "fcbnews24"
@@ -289,7 +310,6 @@ else:
 
     # Use a container to make the expandable sections span the full width
     with st.container():
-        scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
         metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
                                                    'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
                                                    'ProgCarry', 'TakeOn', 'Success1v1', 

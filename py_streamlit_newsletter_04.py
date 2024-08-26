@@ -229,7 +229,7 @@ else:
         tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
 
         def display_metric_tables(metrics_list, title):
-            with st.expander(title, expanded=True):  # Setting expanded=True to make it open by default
+            with st.expander(title, expanded=FALSE):  # Setting expanded=True to make it open by default
                 for metric in metrics_list:
                     if metric not in league_and_position_data.columns:
                         st.write(f"Metric {metric} not found in the data")

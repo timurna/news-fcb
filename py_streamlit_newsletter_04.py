@@ -61,15 +61,16 @@ def set_mobile_css():
     )
 
 # Glossary content
-# Glossary content
 glossary = {
     # Score Metrics
+    '**Score Metrics**': '',
     'Offensive Score': 'A score representing a player\'s overall offensive performance.',
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
     'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
     'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
     
     # Offensive Metrics
+    '**Offensive Metrics**': '',
     'Take on into the Box': 'Number of successful dribbles into the penalty box.',
     'TouchOpBox': 'Number of touches in the opponent\'s penalty box.',
     'KeyPass': 'Passes that directly lead to a shot on goal.',
@@ -101,11 +102,13 @@ glossary = {
     'xA': 'Expected assists.',
     
     # Additional Metrics
+    '**Additional Metrics**': '',
     'OnTarget%': 'Percentage of shots on target out of total shots.',
     'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
     'Pass%': 'Percentage of completed passes out of total passes attempted.',
     
     # Defensive Metrics
+    '**Defensive Metrics**': '',
     'TcklAtt': 'Tackles attempted.',
     'Tckl': 'Tackles made.',
     'AdjTckl': 'Adjusted tackles, considering context.',
@@ -116,6 +119,7 @@ glossary = {
     'Clrnce': 'Clearances made.',
     
     # Physical Metrics
+    '**Physical Metrics**': '',
     'Distance': 'Total distance covered by the player during the match.',
     'M/min': 'Meters covered per minute by the player.',
     'HSR Distance': 'High-speed running distance covered.',

@@ -175,13 +175,13 @@ position_groups = {
 data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
 
 # Convert text-based numbers to numeric
-physical_metrics = ['Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
+physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
                     'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
                     'Medium Deceleration Count', 'High Deceleration Count', 'Distance OTIP', 'M/min OTIP',
                     'HSR Distance OTIP', 'HSR Count OTIP', 'Sprint Distance OTIP', 'Sprint Count OTIP',
                     'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP',
-                    'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP',
-                    'PSV-99']
+                    'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP'
+                    ]
 
 for metric in physical_metrics:
     data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')

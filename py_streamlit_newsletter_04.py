@@ -342,6 +342,9 @@ else:
                         top10.index += 1
                         top10.index.name = 'Rank'
 
+                        # Ensure the Rank column is part of the DataFrame before styling
+                        top10 = top10.reset_index()
+
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
                         top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
@@ -349,7 +352,6 @@ else:
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
-                        # Ensure the Rank column is part of the DataFrame before styling
                         top10_styled = top10.style.apply(color_row, axis=1)
                         top10_html = top10_styled.to_html()
 

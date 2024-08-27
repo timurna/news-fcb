@@ -250,6 +250,9 @@ scores = [
     'Goal Threat Score'
 ]
 
+# Define metrics list for other tables
+metrics = physical_metrics + offensive_metrics + defensive_metrics + ['OnTarget%', 'TcklMade%', 'Pass%']
+
 # User authentication (basic example)
 def authenticate(username, password):
     return username == "fcbscouting24" and password == "fcbnews24"

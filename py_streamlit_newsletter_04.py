@@ -68,6 +68,7 @@ glossary = {
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
     'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
     'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
+    'Goal Threat Score': 'A score representing a player\'s threat to score goals.',
     
     # Offensive Metrics
     '**Offensive Metrics**': '',  # Empty string as value to remove the colon
@@ -222,6 +223,33 @@ data['Defensive Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
 ).mean(axis=1)
 
+# Define the metrics for the Goal Threat Score
+goal_threat_metrics = [
+    'Goal', 'Shot/Goal', 'MinPerGoal', 'ExpG', 'xGOT', 'xG +/-', 
+    'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
+]
+
+# Ensure all goal threat metrics are numeric
+for metric in goal_threat_metrics:
+    data[metric] = pd.to_numeric(data[metric], errors='coerce')
+
+# Fill any missing values with 0
+data[goal_threat_metrics] = data[goal_threat_metrics].fillna(0)
+
+# Calculate the Goal Threat Score
+data['Goal Threat Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[goal_threat_metrics])
+).mean(axis=1)
+
+# Now, add the 'Goal Threat Score' to the list of scores to be displayed
+scores = [
+    'Offensive Score', 
+    'Defensive Score', 
+    'Physical Offensive Score', 
+    'Physical Defensive Score', 
+    'Goal Threat Score'
+]
+
 # User authentication (basic example)
 def authenticate(username, password):
     return username == "fcbscouting24" and password == "fcbnews24"
@@ -289,20 +317,7 @@ else:
 
     # Use a container to make the expandable sections span the full width
     with st.container():
-        scores = ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score']
-        metrics = ['PSV-99'] + physical_metrics + ['Take on into the Box', 'TouchOpBox', 'KeyPass', '2ndAst', 'xA +/-', 'MinPerChnc', 
-                                                   'PsAtt', 'PsCmp', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 
-                                                   'ProgCarry', 'TakeOn', 'Success1v1', 
-                                                   'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
-                                                   'Blocks', 'Int', 'AdjInt', 'Clrnce', 
-                                                   'Goal', 'Shot/Goal', 'MinPerGoal', 'GoalExPn', 
-                                                   'ExpG', 'xGOT', 'ExpGExPn', 'xG +/-', 
-                                                   'Shot', 'SOG', 'Shot conversion', 'Ast', 'xA',
-                                                   'OnTarget%', 'TcklMade%', 'Pass%']
-
-        all_metrics = scores + metrics
-
-        tooltip_headers = {metric: glossary.get(metric, '') for metric in all_metrics}
+        tooltip_headers = {metric: glossary.get(metric, '') for metric in scores + metrics}
 
         def display_metric_tables(metrics_list, title):
             with st.expander(title, expanded=False):  # Setting expanded=True to make it open by default

@@ -243,11 +243,11 @@ data['Goal Threat Score'] = scaler.fit_transform(
 
 # Now, add the 'Goal Threat Score' to the list of scores to be displayed
 scores = [
-    'Offensive Score', 
+    'Offensive Score',
+    'Goal Threat Score',
     'Defensive Score', 
     'Physical Offensive Score', 
-    'Physical Defensive Score', 
-    'Goal Threat Score'
+    'Physical Defensive Score'
 ]
 
 # Define metrics list for other tables

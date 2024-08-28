@@ -177,11 +177,11 @@ data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group,
 # Convert text-based numbers to numeric
 physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
                     'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
-                    'Medium Deceleration Count', 'High Deceleration Count', 'Distance OTIP', 'M/min OTIP',
-                    'HSR Distance OTIP', 'HSR Count OTIP', 'Sprint Distance OTIP', 'Sprint Count OTIP',
-                    'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP',
-                    'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP'
-                    ]
+                    'Medium Deceleration Count', 'High Deceleration Count',
+                    'Distance OTIP', 'M/min OTIP', 'HSR Distance OTIP', 'HSR Count OTIP', 
+                    'Sprint Distance OTIP', 'Sprint Count OTIP', 'HI Distance OTIP', 'HI Count OTIP', 
+                    'Medium Acceleration Count OTIP', 'High Acceleration Count OTIP', 
+                    'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP']
 
 for metric in physical_metrics:
     data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
@@ -191,45 +191,46 @@ data['OnTarget%'] = (data['SOG'] / data['Shot']) * 100
 data['TcklMade%'] = (data['Tckl'] / data['TcklAtt']) * 100
 data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
 
-# Fill missing physical metrics with 0
-data[physical_metrics] = data[physical_metrics].fillna(0)
-
 # Normalize and calculate the scores
 scaler = MinMaxScaler(feature_range=(0, 10))
 quantile_transformer = QuantileTransformer(output_distribution='uniform')
 
 # Calculate physical offensive score
 data['Physical Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics])
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
 ).mean(axis=1)
 
 # Calculate physical defensive score
 data['Physical Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics])
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
 ).mean(axis=1)
 
 # Calculate offensive score
 offensive_metrics = [
-    'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
+    'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 
+    'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
 ]
 
+data[offensive_metrics] = data[offensive_metrics].fillna(0)
 data['Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
+    quantile_transformer.fit_transform(data[offensive_metrics])
 ).mean(axis=1)
 
 # Calculate defensive score
 defensive_metrics = [
-    'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
+    'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
+    'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
 
+data[defensive_metrics] = data[defensive_metrics].fillna(0)
 data['Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
+    quantile_transformer.fit_transform(data[defensive_metrics])
 ).mean(axis=1)
 
 # Define the metrics for the Goal Threat Score
 goal_threat_metrics = [
-    'Goal', 'Shot/Goal', 'MinPerGoal', 'ExpG', 'xGOT', 'xG +/-', 
-    'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
+    'Goal', 'Shot/Goal', 'MinPerGoal', 'ExpG', 'xGOT', 
+    'xG +/-', 'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
 ]
 
 # Ensure all goal threat metrics are numeric

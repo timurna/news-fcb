@@ -148,26 +148,27 @@ file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/main/new.parquet
 data = pd.read_parquet(file_path)
 
 # Calculate age from birthdate
-data['Birthdate'] = pd.to_datetime(data['Birthdate'])
+data['DOB'] = pd.to_datetime(data['DOB'])
 today = datetime.today()
-data['Age'] = data['Birthdate'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
+data['Age'] = data['DOB'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
 
 # Define position groups with potential overlaps
 position_groups = {
-    'IV': ['LCB', 'RCB', 'CB'],
-    'AV': ['LB', 'RB'],
-    'FLV': ['LWB', 'RWB'],
-    'AVFLV': ['LB', 'RB', 'LWB', 'RWB'],
-    'ZDM': ['DM', 'LDM', 'RDM'],
-    'ZDMZM': ['DM', 'LDM', 'RDM', 'CM', 'RM', 'LM'],
-    'ZM': ['CM', 'RM', 'LM'],
-    'ZOM': ['CM', 'AM'],
-    'FS': ['LW', 'RW'],
-    'ST': ['CF', 'LF', 'RF']
+    'IV': ['Left Centre Back', 'Right Centre Back', 'Central Defender'],
+    'AV': ['Left Back', 'Right Back'],
+    'FLV': ['Left Wing Back', 'Right Wing Back'],
+    'AVFLV': ['Left Back', 'Right Back', 'Left Wing Back', 'Right Wing Back'],
+    'ZDM': ['Defensive Midfielder'],
+    'ZDMZM': ['Defensive Midfielder', 'Central Midfielder'],
+    'ZM': ['Central Midfielder],
+    'ZOM': ['Centre Attacking Midfielder'],
+    'ZMZOM': ['Central Midfielder', 'Centre Attacking Midfielder'],
+    'FS': ['Left Midfielder', 'Right Midfielder', 'Left Attacking Midfielder', 'Right Attacking Midfielder'],
+    'ST': ['Left Winger', 'Right Winger', 'Second Striker', 'Centre Forward']
 }
 
 # Assign positions to multiple groups
-data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
+data['Position Groups'] = data['Position_x'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
 
 # Convert text-based numbers to numeric
 physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
@@ -269,7 +270,7 @@ else:
             league_data = data[data['League'] == selected_league]
 
             # Week Summary and Matchday Filtering Logic
-            week_summary = league_data.groupby(['League', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+            week_summary = league_data.groupby(['League', 'Week']).agg({'Date': ['min', 'max']}).reset_index()
             week_summary.columns = ['League', 'Week', 'min', 'max']
 
             week_summary['min'] = pd.to_datetime(week_summary['min'])
@@ -310,7 +311,7 @@ else:
 
                     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-                    top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    top10 = league_and_position_data[['Player_y', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")
@@ -325,7 +326,7 @@ else:
                         top10 = top10.reset_index()
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
-                        top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
+                        top10.rename(columns={'Player_y': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
                         top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
                         def color_row(row):

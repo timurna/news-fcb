@@ -62,7 +62,6 @@ def set_mobile_css():
 
 # Glossary content
 glossary = {
-    # Score Metrics
     '**Score Metrics**': '',  # Empty string as value to remove the colon
     'Offensive Score': 'A score representing a player\'s overall offensive performance.',
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
@@ -70,8 +69,7 @@ glossary = {
     'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
     'Goal Threat Score': 'A score representing a player\'s threat to score goals.',
     
-    # Offensive Metrics
-    '**Offensive Metrics**': '',  # Empty string as value to remove the colon
+    '**Offensive Metrics**': '',
     'Take on into the Box': 'Number of successful dribbles into the penalty box.',
     'TouchOpBox': 'Number of touches in the opponent\'s penalty box.',
     'KeyPass': 'Passes that directly lead to a shot on goal.',
@@ -102,14 +100,12 @@ glossary = {
     'Ast': 'Assists.',
     'xA': 'Expected assists.',
     
-    # Additional Metrics
-    '**Additional Metrics**': '',  # Empty string as value to remove the colon
+    '**Additional Metrics**': '',
     'OnTarget%': 'Percentage of shots on target out of total shots.',
     'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
     'Pass%': 'Percentage of completed passes out of total passes attempted.',
     
-    # Defensive Metrics
-    '**Defensive Metrics**': '',  # Empty string as value to remove the colon
+    '**Defensive Metrics**': '',
     'TcklAtt': 'Tackles attempted.',
     'Tckl': 'Tackles made.',
     'AdjTckl': 'Adjusted tackles, considering context.',
@@ -119,8 +115,7 @@ glossary = {
     'AdjInt': 'Adjusted interceptions, considering context.',
     'Clrnce': 'Clearances made.',
     
-    # Physical Metrics
-    '**Physical Metrics**': '',  # Empty string as value to remove the colon
+    '**Physical Metrics**': '',
     'Distance': 'Total distance covered by the player during the match.',
     'M/min': 'Meters covered per minute by the player.',
     'HSR Distance': 'High-speed running distance covered.',
@@ -148,9 +143,11 @@ glossary = {
     'PSV-99': 'Custom metric PSV-99 (explanation needed).'
 }
 
-# Load the dataset from Parquet
-file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/main/new.parquet'
-data = pd.read_parquet(file_path)
+# Load the dataset from CSV
+data = pd.read_csv('/mnt/data/new.csv')
+
+# Ensure Date column is in datetime format
+data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
 
 # Calculate age from birthdate
 data['Birthdate'] = pd.to_datetime(data['Birthdate'])
@@ -174,75 +171,52 @@ position_groups = {
 # Assign positions to multiple groups
 data['Position Groups'] = data['Position_y'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
 
-# Convert text-based numbers to numeric
+# Convert text-based numbers to numeric, handling problematic strings like '-' and '%'
+for column in data.columns:
+    if data[column].dtype == 'object':  # If the column type is object (string)
+        data[column] = data[column].str.rstrip('%').replace('-', 'nan')
+    data[column] = pd.to_numeric(data[column], errors='coerce')
+
+# Fill missing physical metrics with 0
 physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
-                    'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
-                    'Medium Deceleration Count', 'High Deceleration Count',
+                    'HI Distance', 'HI Count', 'Medium Acceleration Count',
+                    'High Acceleration Count', 'Medium Deceleration Count', 'High Deceleration Count', 
                     'Distance OTIP', 'M/min OTIP', 'HSR Distance OTIP', 'HSR Count OTIP', 
                     'Sprint Distance OTIP', 'Sprint Count OTIP', 'HI Distance OTIP', 'HI Count OTIP', 
                     'Medium Acceleration Count OTIP', 'High Acceleration Count OTIP', 
                     'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP']
 
-for metric in physical_metrics:
-    data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
-
-# Calculate additional metrics
-data['OnTarget%'] = (data['SOG'] / data['Shot']) * 100
-data['TcklMade%'] = (data['Tckl'] / data['TcklAtt']) * 100
-data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
+data[physical_metrics] = data[physical_metrics].fillna(0)
 
 # Normalize and calculate the scores
 scaler = MinMaxScaler(feature_range=(0, 10))
 quantile_transformer = QuantileTransformer(output_distribution='uniform')
 
-# Calculate physical offensive score
-data['Physical Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate physical defensive score
-data['Physical Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate offensive score
+# Define offensive, defensive, and goal threat metrics
 offensive_metrics = [
     'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 
     'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
 ]
-
-data[offensive_metrics] = data[offensive_metrics].fillna(0)
-data['Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[offensive_metrics])
-).mean(axis=1)
-
-# Calculate defensive score
 defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 
     'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
-
-data[defensive_metrics] = data[defensive_metrics].fillna(0)
-data['Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[defensive_metrics])
-).mean(axis=1)
-
-# Define the metrics for the Goal Threat Score
 goal_threat_metrics = [
     'Goal', 'Shot/Goal', 'MinPerGoal', 'ExpG', 'xGOT', 
     'xG +/-', 'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
 ]
 
-# Ensure all goal threat metrics are numeric
-for metric in goal_threat_metrics:
-    data[metric] = pd.to_numeric(data[metric], errors='coerce')
+# Calculate scores
+data['Offensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
+).mean(axis=1)
 
-# Fill any missing values with 0
-data[goal_threat_metrics] = data[goal_threat_metrics].fillna(0)
+data['Defensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
+).mean(axis=1)
 
-# Calculate the Goal Threat Score
 data['Goal Threat Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[goal_threat_metrics])
+    quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
 ).mean(axis=1)
 
 # Now, add the 'Goal Threat Score' to the list of scores to be displayed
@@ -294,7 +268,7 @@ else:
             league_data = data[data['League'] == selected_league]
 
             # Week Summary and Matchday Filtering Logic
-            week_summary = league_data.groupby(['League', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+            week_summary = league_data.groupby(['League', 'Week']).agg({'Date': ['min', 'max']}).reset_index()
             week_summary.columns = ['League', 'Week', 'min', 'max']
 
             week_summary['min'] = pd.to_datetime(week_summary['min'])
@@ -335,7 +309,7 @@ else:
 
                     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-                    top10 = league_and_position_data[['Player_y', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    top10 = league_and_position_data[['Player_x', 'Age', 'Team_y', 'Position_y', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")
@@ -350,7 +324,7 @@ else:
                         top10 = top10.reset_index()
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
-                        top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
+                        top10.rename(columns={'Player_x': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
                         top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
                         def color_row(row):

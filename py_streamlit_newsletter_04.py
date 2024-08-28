@@ -196,20 +196,21 @@ scaler = MinMaxScaler(feature_range=(0, 10))
 quantile_transformer = QuantileTransformer(output_distribution='uniform')
 
 # Calculate physical offensive score
+physical_offensive_metrics = physical_metrics  # Use only the relevant physical metrics
 data['Physical Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+    quantile_transformer.fit_transform(data[physical_offensive_metrics].fillna(0))
 ).mean(axis=1)
 
 # Calculate physical defensive score
+physical_defensive_metrics = physical_metrics  # Use only the relevant physical metrics
 data['Physical Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+    quantile_transformer.fit_transform(data[physical_defensive_metrics].fillna(0))
 ).mean(axis=1)
 
 # Calculate offensive score
 offensive_metrics = [
     'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
 ]
-
 data['Offensive Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
 ).mean(axis=1)
@@ -218,7 +219,6 @@ data['Offensive Score'] = scaler.fit_transform(
 defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
-
 data['Defensive Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
 ).mean(axis=1)
@@ -228,17 +228,8 @@ goal_threat_metrics = [
     'Goal', 'Shot/Goal', 'MinPerGoal', 'ExpG', 'xGOT', 'xG +/-', 
     'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
 ]
-
-# Ensure all goal threat metrics are numeric
-for metric in goal_threat_metrics:
-    data[metric] = pd.to_numeric(data[metric], errors='coerce')
-
-# Fill any missing values with 0
-data[goal_threat_metrics] = data[goal_threat_metrics].fillna(0)
-
-# Calculate the Goal Threat Score
 data['Goal Threat Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[goal_threat_metrics])
+    quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
 ).mean(axis=1)
 
 # Now, add the 'Goal Threat Score' to the list of scores to be displayed

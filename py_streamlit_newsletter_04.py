@@ -177,75 +177,60 @@ physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 
                     'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP',
                     'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP']
 
-for metric in physical_metrics:
-    data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
-
-# Calculate additional metrics
-data['OnTarget%'] = (data['SOG'] / data['Shot']) * 100
-data['TcklMade%'] = (data['Tckl'] / data['TcklAtt']) * 100
-data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
-
-# Normalize and calculate the scores
-scaler = MinMaxScaler(feature_range=(0, 10))
-quantile_transformer = QuantileTransformer(output_distribution='uniform')
-
-# Calculate physical offensive score
-data['Physical Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate physical defensive score
-data['Physical Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate offensive score
 offensive_metrics = [
     'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
 ]
 
-data['Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
-).mean(axis=1)
-
-# Calculate defensive score
 defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
 ]
 
-data['Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
-).mean(axis=1)
-
-# Define the metrics for the Goal Threat Score
 goal_threat_metrics = [
     'Goal', 'Shot/Goal', 'MinPerGoal', 'ExpG', 'xGOT', 'xG +/-', 
     'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
 ]
 
-# Ensure all goal threat metrics are numeric
-for metric in goal_threat_metrics:
-    data[metric] = pd.to_numeric(data[metric], errors='coerce')
+# Ensure numeric conversion and replace commas in physical metrics
+for metric in physical_metrics + offensive_metrics + defensive_metrics + goal_threat_metrics:
+    if metric in data.columns:
+        data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
 
-# Fill any missing values with 0
-data[goal_threat_metrics] = data[goal_threat_metrics].fillna(0)
+# Fill NaN values with 0 only for players who have any non-NaN value in the group of metrics
+def fill_na_conditionally(df, metric_group):
+    # Create a mask where any metric in the group is not NaN
+    mask = df[metric_group].notna().any(axis=1)
+    # Apply filling only to rows where the mask is True
+    df.loc[mask, metric_group] = df.loc[mask, metric_group].fillna(0)
 
-# Calculate the Goal Threat Score
-data['Goal Threat Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[goal_threat_metrics])
+fill_na_conditionally(data, physical_metrics)
+fill_na_conditionally(data, offensive_metrics)
+fill_na_conditionally(data, defensive_metrics)
+fill_na_conditionally(data, goal_threat_metrics)
+
+# Initialize the scalers
+scaler = MinMaxScaler(feature_range=(0, 10))
+quantile_transformer = QuantileTransformer(output_distribution='uniform')
+
+# Calculate the scores
+data['Physical Offensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
 ).mean(axis=1)
 
-# Now, add the 'Goal Threat Score' to the list of scores to be displayed
-scores = [
-    'Offensive Score',
-    'Goal Threat Score',
-    'Defensive Score', 
-    'Physical Offensive Score', 
-    'Physical Defensive Score'
-]
+data['Physical Defensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+).mean(axis=1)
 
-# Define metrics list for other tables
-metrics = physical_metrics + offensive_metrics + defensive_metrics + ['OnTarget%', 'TcklMade%', 'Pass%']
+data['Offensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
+).mean(axis=1)
+
+data['Defensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
+).mean(axis=1)
+
+data['Goal Threat Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
+).mean(axis=1)
 
 # User authentication (basic example)
 def authenticate(username, password):
@@ -314,7 +299,7 @@ else:
 
     # Use a container to make the expandable sections span the full width
     with st.container():
-        tooltip_headers = {metric: glossary.get(metric, '') for metric in scores + metrics}
+        tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
 
         def display_metric_tables(metrics_list, title):
             with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
@@ -355,7 +340,7 @@ else:
 
                         st.write(top10_html, unsafe_allow_html=True)
 
-        display_metric_tables(scores, "Score Metrics")
+        display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
         display_metric_tables(physical_metrics, "Physical Metrics")
         display_metric_tables(offensive_metrics, "Offensive Metrics")
         display_metric_tables(defensive_metrics, "Defensive Metrics")

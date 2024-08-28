@@ -253,6 +253,30 @@ scores = [
 # Define metrics list for other tables
 metrics = physical_metrics + offensive_metrics + defensive_metrics + ['OnTarget%', 'TcklMade%', 'Pass%']
 
+# Mapping from League to the corresponding SkillCorner competition names
+league_to_competition_display = {
+    'Süper Lig (Türkiye)': 'TUR - Super Lig',
+    'Allsvenskan (Sweden)': 'SWE - Allsvenskan',
+    'Super League (Switzerland)': 'SUI - Super League',
+    'Primeira Liga (Portugal)': 'POR - Primeira Liga',
+    'Eliteserien (Norway)': 'NOR - Eliteserien',
+    'Eredivisie (Netherlands)': 'NED - Eredivisie',
+    'Serie A (Italy)': 'ITA - Serie A',
+    'Bundesliga (Germany)': 'GER - Bundesliga',
+    '2. Bundesliga (Germany)': 'GER - 2nd Bundesliga',
+    'Ligue 2 (France)': 'FRA - Ligue 2',
+    'Ligue 1 (France)': 'FRA - Ligue 1',
+    'Primera División (Spain)': 'ESP - LaLiga',
+    'Premier League (England)': 'ENG - Premier League',
+    'Championship (England)': 'ENG - Championship',
+    'Liga Pro (Ecuador)': 'ECU - Liga Pro',
+    'Superliga (Denmark)': 'DEN - Superliga',
+    'Serie A (Brazil)': 'BRA - Série A',
+    'First Division A (Belgium)': 'BEL - Pro League',
+    'Bundesliga (Austria)': 'AUT - Bundesliga',
+    'Liga Profesional Argentina (Argentina)': 'ARG - Primera Division'
+}
+
 # User authentication (basic example)
 def authenticate(username, password):
     return username == "fcbscouting24" and password == "fcbnews24"
@@ -283,15 +307,15 @@ else:
         col1, col2, col3 = st.columns([1, 1, 1])
 
         with col1:
-            leagues = sorted(data['Competition'].unique())  # Sort leagues alphabetically
+            leagues = sorted(data['League'].unique())  # Sort leagues alphabetically
             selected_league = st.selectbox("Select League", leagues, key="select_league")
 
         with col2:
-            league_data = data[data['Competition'] == selected_league]
+            league_data = data[data['League'] == selected_league]
 
             # Week Summary and Matchday Filtering Logic
-            week_summary = league_data.groupby(['Competition', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
-            week_summary.columns = ['Competition', 'Week', 'min', 'max']
+            week_summary = league_data.groupby(['League', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+            week_summary.columns = ['League', 'Week', 'min', 'max']
 
             week_summary['min'] = pd.to_datetime(week_summary['min'])
             week_summary['max'] = pd.to_datetime(week_summary['max'])
@@ -300,7 +324,7 @@ else:
                 lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
             )
 
-            filtered_weeks = week_summary[week_summary['Competition'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
+            filtered_weeks = week_summary[week_summary['League'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
 
             matchday_options = filtered_weeks['Matchday'].tolist()
             selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
@@ -313,7 +337,7 @@ else:
 
     # Filter the data by the selected position group
     league_and_position_data = data[
-        (data['Competition'] == selected_league) &
+        (data['League'] == selected_league) &
         (data['Week'] == selected_week) &
         (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
     ]
@@ -344,6 +368,9 @@ else:
 
                         # Ensure the Rank column is part of the DataFrame before styling
                         top10 = top10.reset_index()
+
+                        # Rename league to competition for display purposes
+                        top10['League'] = top10['League'].map(league_to_competition_display)
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)

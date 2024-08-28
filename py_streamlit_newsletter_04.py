@@ -276,7 +276,7 @@ else:
     set_mobile_css()
 
     # Display the logo at the top
-    st.image('FCBayern-Wortmarke-SF-ANSICHT.png', use_column_width=False, width=800)
+    st.image('logo.png', use_column_width=False, width=800)
 
     # Create a single row for all the filters
     with st.container():

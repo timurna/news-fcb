@@ -314,7 +314,7 @@ else:
                     # Round the Age column to ensure no decimals
                     league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
 
-                    top10 = league_and_position_data[['Player_y', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")

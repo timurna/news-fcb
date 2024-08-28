@@ -60,8 +60,6 @@ def set_mobile_css():
         """, unsafe_allow_html=True
     )
 
-# Glossary content (omitted for brevity, remains the same)
-
 # Load the dataset from Parquet
 file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/main/new.parquet'
 data = pd.read_parquet(file_path)
@@ -112,6 +110,8 @@ quantile_transformer = QuantileTransformer(output_distribution='uniform')
 def calculate_score(df, metrics):
     # Fill missing values with 0 for the specific metrics used
     df_subset = df[metrics].fillna(0)
+    # Ensure all values are numeric
+    df_subset = df_subset.apply(pd.to_numeric, errors='coerce')
     # Apply quantile transformation and scaling
     return scaler.fit_transform(quantile_transformer.fit_transform(df_subset)).mean(axis=1)
 
@@ -179,7 +179,7 @@ def login():
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         if authenticate(username, password):
-            st.session_state.authenticated = True
+                        st.session_state.authenticated = True
         else:
             st.error("Invalid username or password")
 

@@ -60,9 +60,10 @@ def set_mobile_css():
         """, unsafe_allow_html=True
     )
 
-# Define the glossary content
+# Glossary content
 glossary = {
     # Score Metrics
+    '**Score Metrics**': '',  # Empty string as value to remove the colon
     'Offensive Score': 'A score representing a player\'s overall offensive performance.',
     'Defensive Score': 'A score representing a player\'s overall defensive performance.',
     'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
@@ -70,6 +71,7 @@ glossary = {
     'Goal Threat Score': 'A score representing a player\'s threat to score goals.',
     
     # Offensive Metrics
+    '**Offensive Metrics**': '',  # Empty string as value to remove the colon
     'Take on into the Box': 'Number of successful dribbles into the penalty box.',
     'TouchOpBox': 'Number of touches in the opponent\'s penalty box.',
     'KeyPass': 'Passes that directly lead to a shot on goal.',
@@ -101,11 +103,13 @@ glossary = {
     'xA': 'Expected assists.',
     
     # Additional Metrics
+    '**Additional Metrics**': '',  # Empty string as value to remove the colon
     'OnTarget%': 'Percentage of shots on target out of total shots.',
     'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
     'Pass%': 'Percentage of completed passes out of total passes attempted.',
     
     # Defensive Metrics
+    '**Defensive Metrics**': '',  # Empty string as value to remove the colon
     'TcklAtt': 'Tackles attempted.',
     'Tckl': 'Tackles made.',
     'AdjTckl': 'Adjusted tackles, considering context.',
@@ -116,6 +120,7 @@ glossary = {
     'Clrnce': 'Clearances made.',
     
     # Physical Metrics
+    '**Physical Metrics**': '',  # Empty string as value to remove the colon
     'Distance': 'Total distance covered by the player during the match.',
     'M/min': 'Meters covered per minute by the player.',
     'HSR Distance': 'High-speed running distance covered.',
@@ -190,27 +195,51 @@ data['Pass%'] = (data['PsCmp'] / data['PsAtt']) * 100
 scaler = MinMaxScaler(feature_range=(0, 10))
 quantile_transformer = QuantileTransformer(output_distribution='uniform')
 
-def calculate_score(df, metrics):
-    # Fill missing values with 0 for the specific metrics used
-    df_subset = df[metrics].fillna(0)
-    # Ensure all values are numeric
-    df_subset = df_subset.apply(pd.to_numeric, errors='coerce')
-    # Apply quantile transformation and scaling
-    return scaler.fit_transform(quantile_transformer.fit_transform(df_subset)).mean(axis=1)
+# Calculate physical offensive score
+data['Physical Offensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+).mean(axis=1)
 
-# Calculate scores for each category
-data['Physical Offensive Score'] = calculate_score(data, physical_metrics)
-data['Physical Defensive Score'] = calculate_score(data, physical_metrics)
-data['Offensive Score'] = calculate_score(data, [
+# Calculate physical defensive score
+data['Physical Defensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+).mean(axis=1)
+
+# Calculate offensive score
+offensive_metrics = [
     'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
-])
-data['Defensive Score'] = calculate_score(data, [
+]
+
+data['Offensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
+).mean(axis=1)
+
+# Calculate defensive score
+defensive_metrics = [
     'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce'
-])
-data['Goal Threat Score'] = calculate_score(data, [
+]
+
+data['Defensive Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
+).mean(axis=1)
+
+# Define the metrics for the Goal Threat Score
+goal_threat_metrics = [
     'Goal', 'Shot/Goal', 'MinPerGoal', 'ExpG', 'xGOT', 'xG +/-', 
     'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
-])
+]
+
+# Ensure all goal threat metrics are numeric
+for metric in goal_threat_metrics:
+    data[metric] = pd.to_numeric(data[metric], errors='coerce')
+
+# Fill any missing values with 0
+data[goal_threat_metrics] = data[goal_threat_metrics].fillna(0)
+
+# Calculate the Goal Threat Score
+data['Goal Threat Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[goal_threat_metrics])
+).mean(axis=1)
 
 # Now, add the 'Goal Threat Score' to the list of scores to be displayed
 scores = [
@@ -222,35 +251,7 @@ scores = [
 ]
 
 # Define metrics list for other tables
-metrics = physical_metrics + [
-    'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1',
-    'TcklMade%', 'TcklAtt', 'Tckl', 'AdjTckl', 'TcklA3', 'Blocks', 'Int', 'AdjInt', 'Clrnce',
-    'OnTarget%', 'TcklMade%', 'Pass%'
-]
-
-# Mapping from League to the corresponding SkillCorner competition names
-league_to_competition_display = {
-    'Süper Lig (Türkiye)': 'TUR - Super Lig',
-    'Allsvenskan (Sweden)': 'SWE - Allsvenskan',
-    'Super League (Switzerland)': 'SUI - Super League',
-    'Primeira Liga (Portugal)': 'POR - Primeira Liga',
-    'Eliteserien (Norway)': 'NOR - Eliteserien',
-    'Eredivisie (Netherlands)': 'NED - Eredivisie',
-    'Serie A (Italy)': 'ITA - Serie A',
-    'Bundesliga (Germany)': 'GER - Bundesliga',
-    '2. Bundesliga (Germany)': 'GER - 2nd Bundesliga',
-    'Ligue 2 (France)': 'FRA - Ligue 2',
-    'Ligue 1 (France)': 'FRA - Ligue 1',
-    'Primera División (Spain)': 'ESP - LaLiga',
-    'Premier League (England)': 'ENG - Premier League',
-    'Championship (England)': 'ENG - Championship',
-    'Liga Pro (Ecuador)': 'ECU - Liga Pro',
-    'Superliga (Denmark)': 'DEN - Superliga',
-    'Serie A (Brazil)': 'BRA - Série A',
-    'First Division A (Belgium)': 'BEL - Pro League',
-    'Bundesliga (Austria)': 'AUT - Bundesliga',
-    'Liga Profesional Argentina (Argentina)': 'ARG - Primera Division'
-}
+metrics = physical_metrics + offensive_metrics + defensive_metrics + ['OnTarget%', 'TcklMade%', 'Pass%']
 
 # User authentication (basic example)
 def authenticate(username, password):
@@ -262,7 +263,7 @@ def login():
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         if authenticate(username, password):
-                        st.session_state.authenticated = True
+            st.session_state.authenticated = True
         else:
             st.error("Invalid username or password")
 
@@ -282,15 +283,15 @@ else:
         col1, col2, col3 = st.columns([1, 1, 1])
 
         with col1:
-            leagues = sorted(data['League'].unique())  # Sort leagues alphabetically
+            leagues = sorted(data['Competition'].unique())  # Sort leagues alphabetically
             selected_league = st.selectbox("Select League", leagues, key="select_league")
 
         with col2:
-            league_data = data[data['League'] == selected_league]
+            league_data = data[data['Competition'] == selected_league]
 
             # Week Summary and Matchday Filtering Logic
-            week_summary = league_data.groupby(['League', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
-            week_summary.columns = ['League', 'Week', 'min', 'max']
+            week_summary = league_data.groupby(['Competition', 'Week']).agg({'Date.1': ['min', 'max']}).reset_index()
+            week_summary.columns = ['Competition', 'Week', 'min', 'max']
 
             week_summary['min'] = pd.to_datetime(week_summary['min'])
             week_summary['max'] = pd.to_datetime(week_summary['max'])
@@ -299,7 +300,7 @@ else:
                 lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
             )
 
-            filtered_weeks = week_summary[week_summary['League'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
+            filtered_weeks = week_summary[week_summary['Competition'] == selected_league].sort_values(by='min').drop_duplicates(subset=['Week'])
 
             matchday_options = filtered_weeks['Matchday'].tolist()
             selected_matchday = st.selectbox("Select Matchday", matchday_options, key="select_matchday")
@@ -312,7 +313,7 @@ else:
 
     # Filter the data by the selected position group
     league_and_position_data = data[
-        (data['League'] == selected_league) &
+        (data['Competition'] == selected_league) &
         (data['Week'] == selected_week) &
         (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
     ]
@@ -344,10 +345,6 @@ else:
                         # Ensure the Rank column is part of the DataFrame before styling
                         top10 = top10.reset_index()
 
-                        # Check if the League column exists before mapping
-                        if 'League' in top10.columns:
-                            top10['League'] = top10['League'].map(league_to_competition_display)
-
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)
                         top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
@@ -373,4 +370,3 @@ else:
     with st.expander("Glossary"):
         for metric, explanation in glossary.items():
             st.markdown(f"**{metric}:** {explanation}")
-

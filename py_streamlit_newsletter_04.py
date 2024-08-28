@@ -369,8 +369,9 @@ else:
                         # Ensure the Rank column is part of the DataFrame before styling
                         top10 = top10.reset_index()
 
-                        # Rename league to competition for display purposes
-                        top10['League'] = top10['League'].map(league_to_competition_display)
+                        # Check if the League column exists before mapping
+                        if 'League' in top10.columns:
+                            top10['League'] = top10['League'].map(league_to_competition_display)
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'Player_y': 'Player', 'Team_y': 'Team', 'Position_y': 'Position'}, inplace=True)

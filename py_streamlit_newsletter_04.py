@@ -329,7 +329,7 @@ else:
                         top10 = top10.reset_index()
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
-                        top10.rename(columns={'Player_y': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
+                        top10.rename(columns={'playerFullName': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
                         top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
                         def color_row(row):

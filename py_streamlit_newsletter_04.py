@@ -160,7 +160,7 @@ position_groups = {
     'AVFLV': ['Left Back', 'Right Back', 'Left Wing Back', 'Right Wing Back'],
     'ZDM': ['Defensive Midfielder'],
     'ZDMZM': ['Defensive Midfielder', 'Central Midfielder'],
-    'ZM': ['Central Midfielder],
+    'ZM': ['Central Midfielder'],
     'ZOM': ['Centre Attacking Midfielder'],
     'ZMZOM': ['Central Midfielder', 'Centre Attacking Midfielder'],
     'FS': ['Left Midfielder', 'Right Midfielder', 'Left Attacking Midfielder', 'Right Attacking Midfielder'],

@@ -143,8 +143,9 @@ glossary = {
     'PSV-99': 'Custom metric PSV-99 (explanation needed).'
 }
 
-# Load the dataset from CSV
-data = pd.read_csv('/mnt/data/new.csv')
+# Load the dataset from Parquet
+file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/main/new.parquet'
+data = pd.read_parquet(file_path)
 
 # Ensure Date column is in datetime format
 data['Date'] = pd.to_datetime(data['Date'], errors='coerce')

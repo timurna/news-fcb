@@ -60,6 +60,89 @@ def set_mobile_css():
         """, unsafe_allow_html=True
     )
 
+# Define the glossary content
+glossary = {
+    # Score Metrics
+    'Offensive Score': 'A score representing a player\'s overall offensive performance.',
+    'Defensive Score': 'A score representing a player\'s overall defensive performance.',
+    'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
+    'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
+    'Goal Threat Score': 'A score representing a player\'s threat to score goals.',
+    
+    # Offensive Metrics
+    'Take on into the Box': 'Number of successful dribbles into the penalty box.',
+    'TouchOpBox': 'Number of touches in the opponent\'s penalty box.',
+    'KeyPass': 'Passes that directly lead to a shot on goal.',
+    '2ndAst': 'The pass that assists the assist leading to a goal.',
+    'xA +/-': 'Expected Assists +/- difference.',
+    'MinPerChnc': 'Minutes per chance created.',
+    'PsAtt': 'Passes attempted.',
+    'PsCmp': 'Passes completed.',
+    'PsIntoA3rd': 'Passes into the attacking third.',
+    'ProgPass': 'Progressive passes, advancing the ball significantly.',
+    'ThrghBalls': 'Through balls successfully played.',
+    'Touches': 'Total number of touches.',
+    'PsRec': 'Passes received by the player.',
+    'ProgCarry': 'Progressive carries, advancing the ball significantly.',
+    'TakeOn': 'Attempted dribbles to beat an opponent.',
+    'Success1v1': 'Successful 1v1 dribbles against an opponent.',
+    'Goal': 'Goals scored.',
+    'Shot/Goal': 'Shots per goal.',
+    'MinPerGoal': 'Minutes per goal scored.',
+    'GoalExPn': 'Goals excluding penalties.',
+    'ExpG': 'Expected goals.',
+    'xGOT': 'Expected goals on target.',
+    'ExpGExPn': 'Expected goals excluding penalties.',
+    'xG +/-': 'Expected goals +/- difference.',
+    'Shot': 'Total shots taken.',
+    'SOG': 'Shots on goal.',
+    'Shot conversion': 'Percentage of shots converted to goals.',
+    'Ast': 'Assists.',
+    'xA': 'Expected assists.',
+    
+    # Additional Metrics
+    'OnTarget%': 'Percentage of shots on target out of total shots.',
+    'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
+    'Pass%': 'Percentage of completed passes out of total passes attempted.',
+    
+    # Defensive Metrics
+    'TcklAtt': 'Tackles attempted.',
+    'Tckl': 'Tackles made.',
+    'AdjTckl': 'Adjusted tackles, considering context.',
+    'TcklA3': 'Tackles made in the attacking third.',
+    'Blocks': 'Total blocks made.',
+    'Int': 'Interceptions made.',
+    'AdjInt': 'Adjusted interceptions, considering context.',
+    'Clrnce': 'Clearances made.',
+    
+    # Physical Metrics
+    'Distance': 'Total distance covered by the player during the match.',
+    'M/min': 'Meters covered per minute by the player.',
+    'HSR Distance': 'High-speed running distance covered.',
+    'HSR Count': 'Count of high-speed running actions.',
+    'Sprint Distance': 'Total distance covered while sprinting.',
+    'Sprint Count': 'Total sprints performed.',
+    'HI Distance': 'High-intensity distance covered.',
+    'HI Count': 'High-intensity actions performed.',
+    'Medium Acceleration Count': 'Medium-intensity accelerations performed.',
+    'High Acceleration Count': 'High-intensity accelerations performed.',
+    'Medium Deceleration Count': 'Medium-intensity decelerations performed.',
+    'High Deceleration Count': 'High-intensity decelerations performed.',
+    'Distance OTIP': 'Distance covered off the ball in possession (OTIP).',
+    'M/min OTIP': 'Meters per minute covered off the ball in possession (OTIP).',
+    'HSR Distance OTIP': 'High-speed running distance covered off the ball in possession (OTIP).',
+    'HSR Count OTIP': 'High-speed running actions performed off the ball in possession (OTIP).',
+    'Sprint Distance OTIP': 'Sprint distance covered off the ball in possession (OTIP).',
+    'Sprint Count OTIP': 'Sprint actions performed off the ball in possession (OTIP).',
+    'HI Distance OTIP': 'High-intensity distance covered off the ball in possession (OTIP).',
+    'HI Count OTIP': 'High-intensity actions performed off the ball in possession (OTIP).',
+    'Medium Acceleration Count OTIP': 'Medium-intensity accelerations performed off the ball in possession (OTIP).',
+    'High Acceleration Count OTIP': 'High-intensity accelerations performed off the ball in possession (OTIP).',
+    'Medium Deceleration Count OTIP': 'Medium-intensity decelerations performed off the ball in possession (OTIP).',
+    'High Deceleration Count OTIP': 'High-intensity decelerations performed off the ball in possession (OTIP).',
+    'PSV-99': 'Custom metric PSV-99 (explanation needed).'
+}
+
 # Load the dataset from Parquet
 file_path = 'https://raw.githubusercontent.com/timurna/news-fcb/main/new.parquet'
 data = pd.read_parquet(file_path)

@@ -67,42 +67,6 @@ def set_mobile_css():
         """, unsafe_allow_html=True
     )
 
-# (Continue with the rest of your existing code...)
-
-# Ensure 'authenticated' is in session state before anything else
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
-
-def authenticate(username, password):
-    try:
-        # Attempt to retrieve the credentials from st.secrets
-        stored_username = st.secrets["credentials"]["username"]
-        stored_password = st.secrets["credentials"]["password"]
-    except KeyError as e:
-        # If the credentials are not found, display an error message
-        st.error(f"KeyError: {e}. Credentials not found in secrets. Please check your secrets configuration.")
-        return False
-    
-    # Compare provided credentials with the stored ones
-    return username == stored_username and password == stored_password
-
-def login():
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if authenticate(username, password):
-            st.session_state.authenticated = True
-        else:
-            st.error("Invalid username or password")
-
-if not st.session_state.authenticated:
-    login()
-else:
-    set_mobile_css()
-
-    # (Continue with the rest of your existing code...)
-
-
 # Glossary content
 glossary = {
     '**Score Metrics**': '',  
@@ -294,9 +258,9 @@ def authenticate(username, password):
     return username == stored_username and password == stored_password
 
 def login():
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
+    username = st.text_input("Username", key="login_username")
+    password = st.text_input("Password", type="password", key="login_password")
+    if st.button("Login", key="login_button"):
         if authenticate(username, password):
             st.session_state.authenticated = True
         else:

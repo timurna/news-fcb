@@ -238,7 +238,17 @@ if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 
 def authenticate(username, password):
-    return username == st.secrets["credentials"]["username"] and password == st.secrets["credentials"]["password"]
+    try:
+        # Attempt to retrieve the credentials from st.secrets
+        stored_username = st.secrets["credentials"]["username"]
+        stored_password = st.secrets["credentials"]["password"]
+    except KeyError as e:
+        # If the credentials are not found, display an error message
+        st.error(f"KeyError: {e}. Credentials not found in secrets. Please check your secrets configuration.")
+        return False
+    
+    # Compare provided credentials with the stored ones
+    return username == stored_username and password == stored_password
 
 def login():
     username = st.text_input("Username")

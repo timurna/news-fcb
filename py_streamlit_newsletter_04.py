@@ -235,7 +235,7 @@ data['Goal Threat Score'] = scaler.fit_transform(
 
 # User authentication (basic example)
 def authenticate(username, password):
-    return username == "fcbscouting24" and password == "fcbnews24"
+    return username == st.secrets["credentials"]["username"] and password == st.secrets["credentials"]["password"]
 
 def login():
     st.session_state.authenticated = False

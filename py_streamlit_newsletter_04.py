@@ -9,13 +9,6 @@ from PIL import Image
 # Set the page configuration to wide mode
 st.set_page_config(layout="wide")
 
-# Debugging: Check if credentials are found in st.secrets
-if "credentials" in st.secrets:
-    st.write("Credentials found in secrets!")
-    st.write(f"Username: {st.secrets['credentials']['username']}")
-else:
-    st.error("Credentials not found in secrets.")
-
 # Function to apply custom CSS for mobile responsiveness
 def set_mobile_css():
     st.markdown(
@@ -240,31 +233,22 @@ data['Goal Threat Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
 ).mean(axis=1)
 
-# Ensure 'authenticated' is in session state before anything else
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
-
+# User authentication (basic example)
 def authenticate(username, password):
-    try:
-        # Attempt to retrieve the credentials from st.secrets
-        stored_username = st.secrets["credentials"]["username"]
-        stored_password = st.secrets["credentials"]["password"]
-    except KeyError as e:
-        # If the credentials are not found, display an error message
-        st.error(f"KeyError: {e}. Credentials not found in secrets. Please check your secrets configuration.")
-        return False
-    
-    # Compare provided credentials with the stored ones
-    return username == stored_username and password == stored_password
+    return username == "fcbscouting24" and password == "fcbnews24"
 
 def login():
-    username = st.text_input("Username", key="login_username")
-    password = st.text_input("Password", type="password", key="login_password")
-    if st.button("Login", key="login_button"):
+    st.session_state.authenticated = False
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
         if authenticate(username, password):
             st.session_state.authenticated = True
         else:
             st.error("Invalid username or password")
+
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
     login()

@@ -233,12 +233,14 @@ data['Goal Threat Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
 ).mean(axis=1)
 
-# User authentication (using Streamlit secrets)
+# Ensure 'authenticated' is in session state before anything else
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+
 def authenticate(username, password):
     return username == st.secrets["credentials"]["username"] and password == st.secrets["credentials"]["password"]
 
 def login():
-    st.session_state.authenticated = False
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
@@ -246,9 +248,6 @@ def login():
             st.session_state.authenticated = True
         else:
             st.error("Invalid username or password")
-
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
     login()

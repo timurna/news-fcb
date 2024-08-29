@@ -9,13 +9,6 @@ from PIL import Image
 # Set the page configuration to wide mode
 st.set_page_config(layout="wide")
 
-# Debugging: Check if credentials are found in st.secrets
-if "credentials" in st.secrets:
-    st.write("Credentials found in secrets!")
-    st.write(f"Username: {st.secrets['credentials']['username']}")
-else:
-    st.error("Credentials not found in secrets.")
-
 # Function to apply custom CSS for mobile responsiveness
 def set_mobile_css():
     st.markdown(

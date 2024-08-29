@@ -233,9 +233,6 @@ data['Goal Threat Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
 ).mean(axis=1)
 
-# Test to see if secrets are loaded
-st.write(st.secrets)
-
 # User authentication (using Streamlit secrets)
 def authenticate(username, password):
     return username == st.secrets["credentials"]["username"] and password == st.secrets["credentials"]["password"]

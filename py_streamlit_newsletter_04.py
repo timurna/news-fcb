@@ -394,11 +394,11 @@ else:
             ]
         }
 
-        # Iterate over each section
-        for section, metrics in sections.items():
-            st.markdown(f"### {section}")
-            # Iterate over the metrics for the current section
-            for metric in metrics:
-                # Display the metric and its explanation in italic
-                explanation = glossary.get(metric, "")
-                st.markdown(f"{metric}: *{explanation}*")
+    # Iterate over each section
+    for section, metrics in sections.items():
+        st.markdown(f"<h3 style='font-size:24px; color:#333; font-weight:bold;'>{section}</h3>", unsafe_allow_html=True)
+        # Iterate over the metrics for the current section
+        for metric in metrics:
+            # Display the metric and its explanation in italic
+            explanation = glossary.get(metric, "")
+            st.markdown(f"{metric}: *{explanation}*")

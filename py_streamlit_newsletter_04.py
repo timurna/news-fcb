@@ -88,7 +88,7 @@ glossary = {
     'ProgCarry': 'Progressive carries, advancing the ball significantly.',
     'ProgPass': 'Progressive passes, advancing the ball significantly.',
     'Shot': 'Total shots taken.',
-    'Shot conversion': 'Percentage of shots converted to goals.',
+    'Shot conversion': 'Shots per goal.',
     'Shot/Goal': 'Shots per goal.',
     'SOG': 'Shots on goal.',
     'Success1v1': 'Successful dribbles against an opponent.',

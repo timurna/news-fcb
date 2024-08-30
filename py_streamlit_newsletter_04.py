@@ -319,23 +319,43 @@ else:
         (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
     ]
 
+    # Calculate total values from p90 values (for offensive, defensive, and goal threat metrics only)
+    def calculate_total_values(df, metric, minutes_column='Min'):
+        df[metric + '_total'] = df.apply(
+            lambda row: (row[metric] * row[minutes_column] / 90) if pd.notna(row[metric]) and pd.notna(row[minutes_column]) else None, axis=1)
+        return df
+
     # Use a container to make the expandable sections span the full width
     with st.container():
         tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
 
-        def display_metric_tables(metrics_list, title):
+        def display_metric_tables(df, metrics_list, title, calculate_total=False):
             with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
                 for metric in metrics_list:
-                    if metric not in league_and_position_data.columns:
+                    if metric not in df.columns:
                         st.write(f"Metric {metric} not found in the data")
                         continue
 
-                    league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
+                    # Calculate total values only if flagged and 'Min' column exists
+                    if calculate_total and 'Min' in df.columns:
+                        df = calculate_total_values(df, metric, minutes_column='Min')
+                        total_metric = metric + '_total'
+                    else:
+                        total_metric = None
 
-                    # Round the Age column to ensure no decimals
-                    league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
+                    df[metric] = pd.to_numeric(df[metric], errors='coerce')
 
-                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    # Combine the p90 value and total value in the display if total value is calculated
+                    df[f'{metric}_display'] = df.apply(
+                        lambda row: f"{row[metric]:.2f} ({row[total_metric]:.2f})" if total_metric and not pd.isna(row[metric]) and not pd.isna(row[total_metric]) else f"{row[metric]:.2f}" if not pd.isna(row[metric]) else "",
+                        axis=1
+                    )
+
+                    if f'{metric}_display' not in df.columns:
+                        st.write(f"Display column {metric}_display not found for metric {metric}")
+                        continue
+
+                    top10 = df[['playerFullName', 'Age', 'newestTeam', 'Position_x', f'{metric}_display']].dropna(subset=[f'{metric}_display']).sort_values(by=metric, ascending=False).head(10)
 
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")
@@ -346,12 +366,10 @@ else:
                         top10.index += 1
                         top10.index.name = 'Rank'
 
-                        # Ensure the Rank column is part of the DataFrame before styling
                         top10 = top10.reset_index()
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'playerFullName': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
-                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
@@ -365,10 +383,9 @@ else:
 
                         st.write(top10_html, unsafe_allow_html=True)
 
-        display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
-        display_metric_tables(physical_metrics, "Physical Metrics")
-        display_metric_tables(offensive_metrics, "Offensive Metrics")
-        display_metric_tables(defensive_metrics, "Defensive Metrics")
+        display_metric_tables(league_and_position_data, ['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
+        display_metric_tables(league_and_position_data, physical_metrics, "Physical Metrics")
+        display_metric_tables(league_and_position_data, offensive_metrics + defensive_metrics + goal_threat_metrics, "Offensive, Defensive, and Goal Threat Metrics", calculate_total=True)
 
     # Glossary section - Render only after authentication inside an expander
     with st.expander("Glossary"):

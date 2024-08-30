@@ -359,13 +359,24 @@ else:
         display_metric_tables(defensive_metrics, "Defensive Metrics")
 
 #Glossary section
-with st.expander("Glossary"):
-    for metric, explanation in glossary.items():
-        if explanation == '':
-            # This is a section header, create a new expander for it
-            with st.expander(metric):
-                # Since this is a section, no additional metrics to display here
-                pass
-        else:
-            # This is a regular metric, display it within the current section expander
-            st.markdown(f"{metric}: *{explanation}*")
+st.markdown("## Glossary")
+
+# Track the current section
+current_section = None
+
+for metric, explanation in glossary.items():
+    if explanation == '':
+        # If we're processing a new section, finish the previous one
+        if current_section is not None:
+            st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Start a new section
+        with st.expander(metric):
+            current_section = metric
+    else:
+        # Display the metric under the current section
+        st.markdown(f"{metric}: *{explanation}*")
+
+# If the loop ends and a section was open, close it
+if current_section is not None:
+    st.markdown("</div>", unsafe_allow_html=True)

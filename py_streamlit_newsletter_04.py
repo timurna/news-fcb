@@ -187,7 +187,12 @@ physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 
                     'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP']
 
 offensive_metrics = [
-    'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'ProgPass', 'ThrghBalls', 'Touches', 'PsRec', 'ProgCarry', 'TakeOn', 'Success1v1'
+    '2ndAst', 'Ast', 'ExpG', 'ExpGExPn', 'Goal', 'GoalExPn', 'KeyPass', 
+    'MinPerChnc', 'MinPerGoal', 'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 
+    'PsRec', 'ProgCarry', 'ProgPass', 'Shot', 'Shot conversion', 
+    'Shot/Goal', 'SOG', 'Success1v1', 'Take on into the Box', 
+    'TakeOn', 'ThrghBalls', 'TouchOpBox', 'Touches', 'xA', 
+    'xA +/-', 'xG +/-', 'xGOT'
 ]
 
 defensive_metrics = [

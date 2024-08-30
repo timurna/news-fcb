@@ -410,5 +410,3 @@ else:
                 # Display the metric and its explanation in italic
                 explanation = glossary.get(metric, "")
                 st.markdown(f"{metric}: *{explanation}*")
-
-            st.markdown(f"{metric}: *{explanation}*")

@@ -357,10 +357,11 @@ else:
                 top10_styled = top10_styled.apply(color_row, axis=1)
                 st.write(top10_styled.to_html(), unsafe_allow_html=True)
 
-        display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
-        display_metric_tables(physical_metrics, "Physical Metrics")
-        display_metric_tables(offensive_metrics, "Offensive Metrics")
-        display_metric_tables(defensive_metrics, "Defensive Metrics")
+# Example usage of the function in your code
+display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
+display_metric_tables(physical_metrics, "Physical Metrics")
+display_metric_tables(offensive_metrics, "Offensive Metrics")
+display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section - Render only after authentication
     with st.expander("Glossary"):

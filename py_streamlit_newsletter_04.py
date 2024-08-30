@@ -62,7 +62,7 @@ def set_mobile_css():
 
 # Glossary content
 glossary = {
-    '**Score Metrics**': '',  
+    'Score Metrics': '',  
     'Defensive Score': 'Player\'s overall defensive performance.',
     'Goal Threat Score': 'Player\'s threat to score goals.',
     'Offensive Score': 'Player\'s overall offensive performance.',

@@ -323,23 +323,23 @@ else:
     with st.container():
         tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
 
-    def display_metric_tables(metrics_list, title):
+def display_metric_tables(metrics_list, title):
     with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
         for metric in metrics_list:
             if metric not in league_and_position_data.columns:
                 st.write(f"Metric {metric} not found in the data")
                 continue
 
-            league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
+    league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-            # Round the Age column to ensure no decimals
-            league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
+        # Round the Age column to ensure no decimals
+        league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
 
-            # Include the 'Min' column and rename it to 'Min.'
-            top10 = league_and_position_data[['playerFullName', 'Age', 'Min', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+        # Include the 'Min' column and rename it to 'Min.'
+        top10 = league_and_position_data[['playerFullName', 'Age', 'Min', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
-            # Rename the columns in one place
-            top10.rename(columns={
+        # Rename the columns in one place
+        top10.rename(columns={
                 'playerFullName': 'Player',
                 'newestTeam': 'Team',
                 'Position_x': 'Position',
@@ -372,7 +372,6 @@ else:
                         top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
 
                 st.write(top10_html, unsafe_allow_html=True)
-
 
         display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
         display_metric_tables(physical_metrics, "Physical Metrics")

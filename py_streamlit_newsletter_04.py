@@ -332,23 +332,10 @@ else:
 
                     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-                    # Assuming that the raw values are stored in a separate column with a suffix '_raw' 
-                    # and p90 values are already in the metric column
-                    raw_metric = metric + '_raw'
-
-                    if raw_metric not in league_and_position_data.columns:
-                        st.write(f"Raw metric {raw_metric} not found in the data")
-                        continue
-
+                    # Round the Age column to ensure no decimals
                     league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
 
-                    # Combine the p90 value and raw value in the display
-                    league_and_position_data[f'{metric}_display'] = league_and_position_data.apply(
-                        lambda row: f"{row[metric]:.2f} ({row[raw_metric]:.2f})" if not pd.isna(row[metric]) and not pd.isna(row[raw_metric]) else "",
-                        axis=1
-                    )
-
-                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', f'{metric}_display']].dropna(subset=[f'{metric}_display']).sort_values(by=metric, ascending=False).head(10)
+                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")
@@ -359,10 +346,12 @@ else:
                         top10.index += 1
                         top10.index.name = 'Rank'
 
+                        # Ensure the Rank column is part of the DataFrame before styling
                         top10 = top10.reset_index()
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
-                        top10.rename(columns={'playerFullName': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position', f'{metric}_display': metric}, inplace=True)
+                        top10.rename(columns={'playerFullName': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
+                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]

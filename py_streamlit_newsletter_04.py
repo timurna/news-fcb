@@ -319,6 +319,12 @@ else:
         (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
     ]
 
+    # Calculate total values from p90 values
+    def calculate_total_values(df, metric, minutes_column='Min'):
+        df[metric + '_total'] = df.apply(
+            lambda row: (row[metric] * row[minutes_column] / 90) if pd.notna(row[metric]) and pd.notna(row[minutes_column]) else None, axis=1)
+        return df
+
     # Use a container to make the expandable sections span the full width
     with st.container():
         tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
@@ -330,12 +336,23 @@ else:
                         st.write(f"Metric {metric} not found in the data")
                         continue
 
+                    # Calculate total values for metrics using the 'Min' column
+                    if 'Min' in league_and_position_data.columns:
+                        league_and_position_data = calculate_total_values(league_and_position_data, metric, minutes_column='Min')
+                        total_metric = metric + '_total'
+                    else:
+                        st.write(f"'Min' column not found, cannot calculate total values for {metric}")
+                        total_metric = None
+
                     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-                    # Round the Age column to ensure no decimals
-                    league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
+                    # Combine the p90 value and total value in the display if total value is calculated
+                    league_and_position_data[f'{metric}_display'] = league_and_position_data.apply(
+                        lambda row: f"{row[metric]:.2f} ({row[total_metric]:.2f})" if total_metric and not pd.isna(row[metric]) and not pd.isna(row[total_metric]) else f"{row[metric]:.2f}" if not pd.isna(row[metric]) else "",
+                        axis=1
+                    )
 
-                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', f'{metric}_display']].dropna(subset=[f'{metric}_display']).sort_values(by=metric, ascending=False).head(10)
 
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")
@@ -346,12 +363,10 @@ else:
                         top10.index += 1
                         top10.index.name = 'Rank'
 
-                        # Ensure the Rank column is part of the DataFrame before styling
                         top10 = top10.reset_index()
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'playerFullName': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
-                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]

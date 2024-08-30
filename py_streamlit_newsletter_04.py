@@ -69,7 +69,7 @@ glossary = {
     'Physical Defensive Score': 'Player\'s physical contributions to defensive play.',
     'Physical Offensive Score': 'Player\'s physical contributions to offensive play.',
     
-    '**Offensive Metrics**': '',
+    'Offensive Metrics': '',
     '2ndAst': 'The pass that assists the assist leading to a goal.',
     'Ast': 'Assists',
     'ExpG': 'Expected goals.',
@@ -100,12 +100,12 @@ glossary = {
     'xG +/-': 'Expected goals +/- difference.',
     'xGOT': 'Expected goals on target.',
     
-    '**Additional Metrics**': '',  
+    'Additional Metrics': '',  
     'OnTarget%': 'Percentage of shots on target out of total shots.',
     'Pass%': 'Percentage of completed passes out of total passes attempted.',
     'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
     
-    '**Defensive Metrics**': '',  
+    'Defensive Metrics': '',  
     'AdjInt': 'Adjusted interceptions, considering context.',
     'AdjTckl': 'Adjusted tackles, considering context.',
     'Blocks': 'Total blocks made.',
@@ -115,7 +115,7 @@ glossary = {
     'TcklA3': 'Tackles made in the attacking third.',
     'TcklAtt': 'Tackles attempted.',
     
-    '**Physical Metrics**': '',  
+    'Physical Metrics': '',  
     'PSV-99': 'Peak Sprint Velocity (Maximum Speed).',
     'Distance': 'Total distance covered by the player during the match.',
     'Distance OTIP': 'Distance covered while opponent has ball possession (OTIP).',
@@ -358,8 +358,13 @@ else:
         display_metric_tables(offensive_metrics, "Offensive Metrics")
         display_metric_tables(defensive_metrics, "Defensive Metrics")
 
-    # Glossary section now placed below the metrics tables
-# Glossary section now placed below the metrics tables
+#Glossary section
 with st.expander("Glossary"):
     for metric, explanation in glossary.items():
-        st.markdown(f"{metric}: *{explanation}*")
+        if explanation == '':
+            # This is a section header, display it in bold
+            st.markdown(f"**{metric}**")
+        else:
+            # This is a regular metric, display it with an italic explanation
+            st.markdown(f"{metric}: *{explanation}*")
+

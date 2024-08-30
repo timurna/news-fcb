@@ -63,7 +63,7 @@ def set_mobile_css():
 # Glossary content
 glossary = {
     'Score Metrics': '',  
-    'Defensive Score': 'Player\'s overall defensive performance. [2ndAst, Ast, ExpG, ExpGExPn, Goal, GoalExPn, KeyPass, MinPerChnc, MinPerGoal, PsAtt, PsCmp, Pass%, PsIntoA3rd, PsRec, ProgCarry, ProgPass, Shot, Shot conversion, Shot/Goal, SOG, Success1v1, Take on into the Box, TakeOn, ThrghBalls, TouchOpBox, Touches, xA, xA +/-, xG +/-, xGOT'],
+    'Defensive Score': 'Player\'s overall defensive performance.[2ndAst, Ast, ExpG, ExpGExPn, Goal, GoalExPn, KeyPass, MinPerChnc, MinPerGoal, PsAtt, PsCmp, Pass%, PsIntoA3rd, PsRec, ProgCarry, ProgPass, Shot, Shot conversion, Shot/Goal, SOG, Success1v1, Take on into the Box, TakeOn, ThrghBalls, TouchOpBox, Touches, xA, xA +/-, xG +/-, xGOT'],
     'Goal Threat Score': 'Player\'s threat to score goals.',
     'Offensive Score': 'Player\'s overall offensive performance.',
     'Physical Defensive Score': 'Player\'s physical contributions to defensive play.',

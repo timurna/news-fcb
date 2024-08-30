@@ -358,12 +358,48 @@ else:
         display_metric_tables(offensive_metrics, "Offensive Metrics")
         display_metric_tables(defensive_metrics, "Defensive Metrics")
 
-#Glossary section
-with st.expander("Glossary"):
-    for metric, explanation in glossary.items():
-        if explanation == '':
-            # This is a section header, display it in bold
-            st.markdown(f"**{metric}**")
-        else:
-            # This is a regular metric, display it with an italic explanation
-            st.markdown(f"{metric}: *{explanation}*")
+    # Glossary section - Render only after authentication
+    with st.expander("Glossary"):
+        sections = {
+            "Score Metrics": [
+                'Defensive Score', 'Goal Threat Score', 'Offensive Score', 
+                'Physical Defensive Score', 'Physical Offensive Score'
+            ],
+            "Offensive Metrics": [
+                '2ndAst', 'Ast', 'ExpG', 'ExpGExPn', 'Goal', 'GoalExPn', 'KeyPass', 
+                'MinPerChnc', 'MinPerGoal', 'PsAtt', 'PsCmp', 'PsIntoA3rd', 
+                'PsRec', 'ProgCarry', 'ProgPass', 'Shot', 'Shot conversion', 
+                'Shot/Goal', 'SOG', 'Success1v1', 'Take on into the Box', 
+                'TakeOn', 'ThrghBalls', 'TouchOpBox', 'Touches', 'xA', 
+                'xA +/-', 'xG +/-', 'xGOT'
+            ],
+            "Additional Metrics": [
+                'OnTarget%', 'Pass%', 'TcklMade%'
+            ],
+            "Defensive Metrics": [
+                'AdjInt', 'AdjTckl', 'Blocks', 'Clrnce', 'Int', 
+                'Tckl', 'TcklA3', 'TcklAtt'
+            ],
+            "Physical Metrics": [
+                'PSV-99', 'Distance', 'Distance OTIP', 'HI Count', 
+                'HI Count OTIP', 'HI Distance', 'HI Distance OTIP', 
+                'High Acceleration Count', 'High Acceleration Count OTIP', 
+                'High Deceleration Count', 'High Deceleration Count OTIP', 
+                'HSR Count', 'HSR Count OTIP', 'HSR Distance', 
+                'HSR Distance OTIP', 'M/min', 'M/min OTIP', 
+                'Medium Acceleration Count', 'Medium Acceleration Count OTIP', 
+                'Medium Deceleration Count', 'Medium Deceleration Count OTIP', 
+                'Sprint Count', 'Sprint Count OTIP', 'Sprint Distance', 
+                'Sprint Distance OTIP'
+            ]
+        }
+
+        # Iterate over each section
+        for section, metrics in sections.items():
+            # Create an expander for each section
+            with st.expander(section):
+                # Iterate over the metrics for the current section
+                for metric in metrics:
+                    # Display the metric and its explanation in italic
+                    explanation = glossary.get(metric, "")
+                    st.markdown(f"{metric}: *{explanation}*")

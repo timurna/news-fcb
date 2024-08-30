@@ -169,7 +169,7 @@ position_groups = {
 data['Position Groups'] = data['Position_x'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
 
 # Convert text-based numbers to numeric, handling percentage metrics
-percentage_metrics = ['TcklMade%', 'Pass%']
+percentage_metrics = ['TcklMade%', 'Pass%', 'OnTarget%']
 
 # Remove percentage signs and convert to numeric
 for metric in percentage_metrics:
@@ -188,7 +188,7 @@ offensive_metrics = [
     '2ndAst', 'Ast', 'ExpG', 'ExpGExPn', 'Goal', 'GoalExPn', 'KeyPass', 
     'MinPerChnc', 'MinPerGoal', 'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 
     'PsRec', 'ProgCarry', 'ProgPass', 'Shot', 'Shot conversion', 
-    'Shot/Goal', 'SOG', 'Success1v1', 'Take on into the Box', 
+    'Shot/Goal', 'SOG', 'OnTarget%', 'Success1v1', 'Take on into the Box', 
     'TakeOn', 'ThrghBalls', 'TouchOpBox', 'Touches', 'xA', 
     'xA +/-', 'xG +/-', 'xGOT'
 ]

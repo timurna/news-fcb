@@ -396,10 +396,9 @@ else:
 
         # Iterate over each section
         for section, metrics in sections.items():
-            # Create an expander for each section
-            with st.expander(section):
-                # Iterate over the metrics for the current section
-                for metric in metrics:
-                    # Display the metric and its explanation in italic
-                    explanation = glossary.get(metric, "")
-                    st.markdown(f"{metric}: *{explanation}*")
+            st.markdown(f"### {section}")
+            # Iterate over the metrics for the current section
+            for metric in metrics:
+                # Display the metric and its explanation in italic
+                explanation = glossary.get(metric, "")
+                st.markdown(f"{metric}: *{explanation}*")

@@ -332,14 +332,14 @@ def display_metric_tables(metrics_list, title):
 
     league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-        # Round the Age column to ensure no decimals
-        league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
+    # Round the Age column to ensure no decimals
+    league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
 
-        # Include the 'Min' column and rename it to 'Min.'
-        top10 = league_and_position_data[['playerFullName', 'Age', 'Min', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+    # Include the 'Min' column and rename it to 'Min.'
+    top10 = league_and_position_data[['playerFullName', 'Age', 'Min', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
-        # Rename the columns in one place
-        top10.rename(columns={
+    # Rename the columns in one place
+    top10.rename(columns={
                 'playerFullName': 'Player',
                 'newestTeam': 'Team',
                 'Position_x': 'Position',

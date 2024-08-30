@@ -346,23 +346,23 @@ def display_metric_tables(metrics_list, title):
                 'Min': 'Min.'
             }, inplace=True)
 
-            if top10.empty:
-                st.header(f"Top 10 Players in {metric}")
-                st.write("No data available")
-            else:
-                # Reset the index to create a rank column starting from 1
-                top10.reset_index(drop=True, inplace=True)
-                top10.index += 1
-                top10.index.name = 'Rank'
+        if top10.empty:
+            st.header(f"Top 10 Players in {metric}")
+            st.write("No data available")
+        else:
+            # Reset the index to create a rank column starting from 1
+            top10.reset_index(drop=True, inplace=True)
+            top10.index += 1
+            top10.index.name = 'Rank'
 
-                # Ensure the Rank column is part of the DataFrame before styling
-                top10 = top10.reset_index()
+            # Ensure the Rank column is part of the DataFrame before styling
+            top10 = top10.reset_index()
 
-                st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
-                top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
+            st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+            top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
-                def color_row(row):
-                    return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
+            def color_row(row):
+            return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
                 top10_styled = top10.style.apply(color_row, axis=1)
                 top10_html = top10_styled.to_html()

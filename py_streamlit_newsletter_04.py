@@ -312,56 +312,51 @@ else:
         tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
 
         def display_metric_tables(metrics_list, title):
-    # Set the format of the headline above each table
-    st.markdown(f"<h2 style='font-size:24px; color:#333; font-weight:bold;'>{title}</h2>", unsafe_allow_html=True)
-    
-    with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
-        for metric in metrics_list:
-            if metric not in league_and_position_data.columns:
-                st.write(f"Metric {metric} not found in the data")
-                continue
+            with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
+                for metric in metrics_list:
+                    if metric not in league_and_position_data.columns:
+                        st.write(f"Metric {metric} not found in the data")
+                        continue
 
-            league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
+                    league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
-            # Round the Age column to ensure no decimals
-            league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
+                    # Round the Age column to ensure no decimals
+                    league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
 
-            top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
-            if top10.empty:
-                st.header(f"Top 10 Players in {metric}")
-                st.write("No data available")
-            else:
-                # Reset the index to create a rank column starting from 1
-                top10.reset_index(drop=True, inplace=True)
-                top10.index += 1
-                top10.index.name = 'Rank'
+                    if top10.empty:
+                        st.header(f"Top 10 Players in {metric}")
+                        st.write("No data available")
+                    else:
+                        # Reset the index to create a rank column starting from 1
+                        top10.reset_index(drop=True, inplace=True)
+                        top10.index += 1
+                        top10.index.name = 'Rank'
 
-                # Ensure the Rank column is part of the DataFrame before styling
-                top10 = top10.reset_index()
+                        # Ensure the Rank column is part of the DataFrame before styling
+                        top10 = top10.reset_index()
 
-                # Custom CSS to change header font size
-                top10_styled = top10.style.set_table_styles(
-                    {
-                        '': {
-                            'selector': 'th',
-                            'props': [('font-size', '18px'),  # Change this value to adjust the font size
-                                      ('text-align', 'center')]  # Center the header text
-                        }
-                    }
-                )
+                        st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+                        top10.rename(columns={'playerFullName': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
+                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
-                def color_row(row):
-                    return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
+                        def color_row(row):
+                            return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
 
-                top10_styled = top10_styled.apply(color_row, axis=1)
-                st.write(top10_styled.to_html(), unsafe_allow_html=True)
+                        top10_styled = top10.style.apply(color_row, axis=1)
+                        top10_html = top10_styled.to_html()
 
-# Example usage of the function in your code
-display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
-display_metric_tables(physical_metrics, "Physical Metrics")
-display_metric_tables(offensive_metrics, "Offensive Metrics")
-display_metric_tables(defensive_metrics, "Defensive Metrics")
+                        for header, tooltip in tooltip_headers.items():
+                            if tooltip:
+                                top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
+
+                        st.write(top10_html, unsafe_allow_html=True)
+
+        display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
+        display_metric_tables(physical_metrics, "Physical Metrics")
+        display_metric_tables(offensive_metrics, "Offensive Metrics")
+        display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section - Render only after authentication
     with st.expander("Glossary"):
@@ -399,11 +394,11 @@ display_metric_tables(defensive_metrics, "Defensive Metrics")
             ]
         }
 
-    # Iterate over each section
-    for section, metrics in sections.items():
-        st.markdown(f"<h3 style='font-size:24px; color:#333; font-weight:bold;'>{section}</h3>", unsafe_allow_html=True)
-        # Iterate over the metrics for the current section
-        for metric in metrics:
-            # Display the metric and its explanation in italic
-            explanation = glossary.get(metric, "")
-            st.markdown(f"{metric}: *{explanation}*")
+        # Iterate over each section
+        for section, metrics in sections.items():
+            st.markdown(f"### {section}")
+            # Iterate over the metrics for the current section
+            for metric in metrics:
+                # Display the metric and its explanation in italic
+                explanation = glossary.get(metric, "")
+                st.markdown(f"{metric}: *{explanation}*")

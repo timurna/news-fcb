@@ -360,7 +360,7 @@ else:
 
     # Glossary section - Render only after authentication
     with st.expander("Glossary"):
-    sections = {
+        sections = {
         "Score Metrics": [
             'Defensive Score', 'Goal Threat Score', 'Offensive Score', 
             'Physical Defensive Score', 'Physical Offensive Score'

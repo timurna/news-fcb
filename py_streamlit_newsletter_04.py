@@ -360,11 +360,23 @@ else:
 
 #Glossary section
 with st.expander("Glossary"):
+    current_section = None
     for metric, explanation in glossary.items():
         if explanation == '':
-            # This is a section header, display it in bold
-            st.markdown(f"**{metric}**")
+            # Close the previous expander if it's open
+            if current_section is not None:
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            # Open a new expander for the current section
+            st.markdown(f"<div style='margin-bottom: 10px;'><strong>{metric}</strong>", unsafe_allow_html=True)
+            with st.expander(metric, expanded=False):
+                current_section = metric
         else:
-            # This is a regular metric, display it with an italic explanation
+            # This is a regular metric, display it within the current section expander
             st.markdown(f"{metric}: *{explanation}*")
+
+    # Close the last section if open
+    if current_section is not None:
+        st.markdown("</div>", unsafe_allow_html=True)
+
 

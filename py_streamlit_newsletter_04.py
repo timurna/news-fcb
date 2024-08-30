@@ -78,9 +78,11 @@ glossary = {
     'GoalExPn': 'Goals excluding penalties.',
     'KeyPass': 'Passes that directly lead to a shot on goal.',
     'MinPerChnc': 'Minutes per chance created.',
-    'MinPerGoal': 'Minutes per goal scored.',
+    'MinPerGoal': 'Minutes per goal.',
+    'OnTarget%': 'Percentage of shots on target out of total shots.',
     'PsAtt': 'Passes attempted.',
     'PsCmp': 'Passes completed.',
+    'Pass%': 'Percentage of completed passes out of total passes attempted.',
     'PsIntoA3rd': 'Passes into the attacking third.',
     'PsRec': 'Passes received by the player.',
     'ProgCarry': 'Progressive carries, advancing the ball significantly.',
@@ -89,21 +91,16 @@ glossary = {
     'Shot conversion': 'Percentage of shots converted to goals.',
     'Shot/Goal': 'Shots per goal.',
     'SOG': 'Shots on goal.',
-    'Success1v1': 'Successful 1v1 dribbles against an opponent.',
+    'Success1v1': 'Successful dribbles against an opponent.',
     'Take on into the Box': 'Number of successful dribbles into the penalty box.',
-    'TakeOn': 'Attempted dribbles to beat an opponent.',
-    'ThrghBalls': 'Through balls successfully played.',
+    'TakeOn': 'Attempted dribbles against an opponent.',
+    'ThrghBalls': 'Through balls played.',
     'TouchOpBox': 'Number of touches in the opponent\'s penalty box.',
     'Touches': 'Total number of touches.',
     'xA': 'Expected assists.',
     'xA +/-': 'Expected Assists +/- difference.',
     'xG +/-': 'Expected goals +/- difference.',
     'xGOT': 'Expected goals on target.',
-    
-    'Additional Metrics': '',  
-    'OnTarget%': 'Percentage of shots on target out of total shots.',
-    'Pass%': 'Percentage of completed passes out of total passes attempted.',
-    'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
     
     'Defensive Metrics': '',  
     'AdjInt': 'Adjusted interceptions, considering context.',
@@ -112,6 +109,7 @@ glossary = {
     'Clrnce': 'Clearances made.',
     'Int': 'Interceptions made.',
     'Tckl': 'Tackles made.',
+    'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
     'TcklA3': 'Tackles made in the attacking third.',
     'TcklAtt': 'Tackles attempted.',
     
@@ -379,18 +377,15 @@ else:
             ],
             "Offensive Metrics": [
                 '2ndAst', 'Ast', 'ExpG', 'ExpGExPn', 'Goal', 'GoalExPn', 'KeyPass', 
-                'MinPerChnc', 'MinPerGoal', 'PsAtt', 'PsCmp', 'PsIntoA3rd', 
-                'PsRec', 'ProgCarry', 'ProgPass', 'Shot', 'Shot conversion', 
+                'MinPerChnc', 'MinPerGoal', 'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 
+                'PsRec', 'ProgCarry', 'ProgPass', 'Shot', 'OnTarget%', 'Shot conversion', 
                 'Shot/Goal', 'SOG', 'Success1v1', 'Take on into the Box', 
                 'TakeOn', 'ThrghBalls', 'TouchOpBox', 'Touches', 'xA', 
                 'xA +/-', 'xG +/-', 'xGOT'
             ],
-            "Additional Metrics": [
-                'OnTarget%', 'Pass%', 'TcklMade%'
-            ],
             "Defensive Metrics": [
                 'AdjInt', 'AdjTckl', 'Blocks', 'Clrnce', 'Int', 
-                'Tckl', 'TcklA3', 'TcklAtt'
+                'TcklAtt', 'Tckl', 'TcklMade%', 'TcklA3'
             ],
             "Physical Metrics": [
                 'PSV-99', 'Distance', 'Distance OTIP', 'HI Count', 

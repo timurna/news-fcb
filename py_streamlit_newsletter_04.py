@@ -323,7 +323,7 @@ else:
     with st.container():
         tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
 
-def display_metric_tables(metrics_list, title):
+    def display_metric_tables(metrics_list, title):
     with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
         for metric in metrics_list:
             if metric not in league_and_position_data.columns:

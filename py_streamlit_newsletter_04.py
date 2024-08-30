@@ -361,22 +361,14 @@ else:
 #Glossary section
 st.markdown("## Glossary")
 
-# Track the current section
-current_section = None
-
+# Iterate over the glossary items and handle section headers separately
 for metric, explanation in glossary.items():
     if explanation == '':
-        # If we're processing a new section, finish the previous one
-        if current_section is not None:
-            st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Start a new section
+        # This is a section header, create a new expander for it
         with st.expander(metric):
-            current_section = metric
+            # Now we'll loop through and add the relevant metrics inside this section
+            for sub_metric, sub_explanation in glossary.items():
+                if sub_explanation != '' and glossary[metric] == '':
+                    st.markdown(f"{sub_metric}: *{sub_explanation}*")
     else:
-        # Display the metric under the current section
-        st.markdown(f"{metric}: *{explanation}*")
-
-# If the loop ends and a section was open, close it
-if current_section is not None:
-    st.markdown("</div>", unsafe_allow_html=True)
+        continue  # Skip the metric since it's already handled in the above loop

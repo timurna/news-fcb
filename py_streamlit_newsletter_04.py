@@ -170,7 +170,15 @@ position_groups = {
 # Assign positions to multiple groups
 data['Position Groups'] = data['Position_x'].apply(lambda pos: [group for group, positions in position_groups.items() if pos in positions])
 
-# Convert text-based numbers to numeric
+# Convert text-based numbers to numeric, handling percentage metrics
+percentage_metrics = ['TcklMade%', 'Pass%']
+
+# Remove percentage signs and convert to numeric
+for metric in percentage_metrics:
+    if metric in data.columns:
+        data[metric] = pd.to_numeric(data[metric].str.replace('%', ''), errors='coerce')
+
+# Convert other text-based numbers to numeric
 physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
                     'HI Distance', 'HI Count', 'Medium Acceleration Count', 'High Acceleration Count',
                     'Medium Deceleration Count', 'High Deceleration Count', 'Distance OTIP', 'M/min OTIP',
@@ -191,9 +199,8 @@ goal_threat_metrics = [
     'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
 ]
 
-# Ensure numeric conversion and replace commas in physical metrics
 for metric in physical_metrics + offensive_metrics + defensive_metrics + goal_threat_metrics:
-    if metric in data.columns:
+    if metric in data.columns and metric not in percentage_metrics:  # Exclude percentage metrics already processed
         data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
 
 # Fill NaN values with 0 only for players who have any non-NaN value in the group of metrics
@@ -404,4 +411,3 @@ else:
                 st.markdown(f"{metric}: *{explanation}*")
 
             st.markdown(f"{metric}: *{explanation}*")
-

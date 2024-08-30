@@ -359,9 +359,7 @@ else:
         display_metric_tables(defensive_metrics, "Defensive Metrics")
 
     # Glossary section now placed below the metrics tables
+# Glossary section now placed below the metrics tables
 with st.expander("Glossary"):
     for metric, explanation in glossary.items():
-        st.markdown(f"{metric}: {explanation}")
-
-
-
+        st.markdown(f"{metric}: *{explanation}*")

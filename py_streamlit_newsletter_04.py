@@ -396,7 +396,7 @@ else:
 
         # Iterate over each section
         for section, metrics in sections.items():
-            st.markdown(f"## {section}")
+            st.markdown(f"### {section}")
             # Iterate over the metrics for the current section
             for metric in metrics:
                 # Display the metric and its explanation in italic

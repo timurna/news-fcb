@@ -63,11 +63,11 @@ def set_mobile_css():
 # Glossary content
 glossary = {
     '**Score Metrics**': '',  
-    'Offensive Score': 'A score representing a player\'s overall offensive performance.',
-    'Defensive Score': 'A score representing a player\'s overall defensive performance.',
-    'Physical Offensive Score': 'A score representing a player\'s physical contributions to offensive play.',
-    'Physical Defensive Score': 'A score representing a player\'s physical contributions to defensive play.',
-    'Goal Threat Score': 'A score representing a player\'s threat to score goals.',
+    'Offensive Score': 'Player\'s overall offensive performance.',
+    'Goal Threat Score': 'Player\'s threat to score goals.',
+    'Defensive Score': 'Player\'s overall defensive performance.',
+    'Physical Offensive Score': 'Player\'s physical contributions to offensive play.',
+    'Physical Defensive Score': 'Player\'s physical contributions to defensive play.',
     
     '**Offensive Metrics**': '',  
     'Take on into the Box': 'Number of successful dribbles into the penalty box.',

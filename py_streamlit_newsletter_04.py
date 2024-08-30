@@ -323,9 +323,9 @@ else:
     with st.container():
         tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
 
-        def display_metric_tables(metrics_list, title):
-            with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
-            for metric in metrics_list:
+    def display_metric_tables(metrics_list, title):
+    with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
+        for metric in metrics_list:
             if metric not in league_and_position_data.columns:
                 st.write(f"Metric {metric} not found in the data")
                 continue
@@ -375,7 +375,6 @@ else:
                         top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
 
                 st.write(top10_html, unsafe_allow_html=True)
-
 
         display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
         display_metric_tables(physical_metrics, "Physical Metrics")

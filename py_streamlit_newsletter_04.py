@@ -223,13 +223,29 @@ fill_na_conditionally(data, goal_threat_metrics)
 scaler = MinMaxScaler(feature_range=(0, 10))
 quantile_transformer = QuantileTransformer(output_distribution='uniform')
 
+# Define physical metrics subsets
+physical_offensive_metrics = [
+    'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 
+    'Sprint Count', 'HI Distance', 'HI Count', 
+    'Medium Acceleration Count', 'High Acceleration Count', 
+    'Medium Deceleration Count', 'High Deceleration Count'
+]
+
+physical_defensive_metrics = [
+    'Distance OTIP', 'M/min OTIP', 'HSR Distance OTIP', 'HSR Count OTIP', 
+    'Sprint Distance OTIP', 'Sprint Count OTIP', 'HI Distance OTIP', 
+    'HI Count OTIP', 'Medium Acceleration Count OTIP', 
+    'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 
+    'High Deceleration Count OTIP'
+]
+
 # Calculate the scores
 data['Physical Offensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+    quantile_transformer.fit_transform(data[physical_offensive_metrics].fillna(0))
 ).mean(axis=1)
 
 data['Physical Defensive Score'] = scaler.fit_transform(
-    quantile_transformer.fit_transform(data[physical_metrics].fillna(0))
+    quantile_transformer.fit_transform(data[physical_defensive_metrics].fillna(0))
 ).mean(axis=1)
 
 data['Offensive Score'] = scaler.fit_transform(
@@ -365,7 +381,8 @@ else:
                         st.write(top10_html, unsafe_allow_html=True)
 
         display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
-        display_metric_tables(physical_metrics, "Physical Metrics")
+        display_metric_tables(physical_offensive_metrics, "Physical Offensive Metrics")
+        display_metric_tables(physical_defensive_metrics, "Physical Defensive Metrics")
         display_metric_tables(offensive_metrics, "Offensive Metrics")
         display_metric_tables(defensive_metrics, "Defensive Metrics")
 
@@ -388,16 +405,19 @@ else:
                 'AdjInt', 'AdjTckl', 'Blocks', 'Clrnce', 'Int', 
                 'TcklAtt', 'Tckl', 'TcklMade%', 'TcklA3'
             ],
-            "Physical Metrics": [
-                'PSV-99', 'Distance', 'Distance OTIP', 'HI Count', 
-                'HI Count OTIP', 'HI Distance', 'HI Distance OTIP', 
-                'High Acceleration Count', 'High Acceleration Count OTIP', 
-                'High Deceleration Count', 'High Deceleration Count OTIP', 
-                'HSR Count', 'HSR Count OTIP', 'HSR Distance', 
-                'HSR Distance OTIP', 'M/min', 'M/min OTIP', 
-                'Medium Acceleration Count', 'Medium Acceleration Count OTIP', 
-                'Medium Deceleration Count', 'Medium Deceleration Count OTIP', 
-                'Sprint Count', 'Sprint Count OTIP', 'Sprint Distance', 
+            "Physical Offensive Metrics": [
+                'Distance', 'M/min', 'HSR Distance', 'HSR Count', 
+                'Sprint Distance', 'Sprint Count', 'HI Distance', 
+                'HI Count', 'Medium Acceleration Count', 
+                'High Acceleration Count', 'Medium Deceleration Count', 
+                'High Deceleration Count'
+            ],
+            "Physical Defensive Metrics": [
+                'Distance OTIP', 'M/min OTIP', 'HI Distance OTIP', 
+                'HI Count OTIP', 'High Acceleration Count OTIP', 
+                'High Deceleration Count OTIP', 'HSR Count OTIP', 
+                'HSR Distance OTIP', 'Medium Acceleration Count OTIP', 
+                'Medium Deceleration Count OTIP', 'Sprint Count OTIP', 
                 'Sprint Distance OTIP'
             ]
         }

@@ -225,7 +225,7 @@ quantile_transformer = QuantileTransformer(output_distribution='uniform')
 
 # Define physical metrics subsets
 physical_offensive_metrics = [
-    'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 
+    'PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 
     'Sprint Count', 'HI Distance', 'HI Count', 
     'Medium Acceleration Count', 'High Acceleration Count', 
     'Medium Deceleration Count', 'High Deceleration Count'

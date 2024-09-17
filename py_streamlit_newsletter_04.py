@@ -60,10 +60,10 @@ def set_mobile_css():
         """, unsafe_allow_html=True
     )
 
-# Glossary content
 # Glossary content with metrics integrated
 glossary = {
     'Score Metrics': '',  
+    'Overall Score': 'Player\'s overall performance across all metrics.',
     'Defensive Score': 'Player\'s overall defensive performance. Metrics: TcklMade%, TcklAtt, Tckl, AdjTckl, TcklA3, Blocks, Int, AdjInt, Clrnce',
     'Goal Threat Score': 'Player\'s threat to score goals. Metrics: Goal, Shot/Goal, MinPerGoal, ExpG, xGOT, xG +/-, Shot, SOG, Shot conversion, OnTarget%',
     'Offensive Score': 'Player\'s overall offensive performance. Metrics: 2ndAst, Ast, ExpG, ExpGExPn, Goal, GoalExPn, KeyPass, MinPerChnc, MinPerGoal, PsAtt, PsCmp, Pass%, PsIntoA3rd, PsRec, ProgCarry, ProgPass, Shot, Shot conversion, Shot/Goal, SOG, Success1v1, Take on into the Box, TakeOn, ThrghBalls, TouchOpBox, Touches, xA, xA +/-, xG +/-, xGOT',
@@ -260,6 +260,17 @@ data['Goal Threat Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
 ).mean(axis=1)
 
+# **Add the Overall Score by combining all metrics**
+# Create a list of all metrics used in the scores
+all_metrics = list(set(
+    physical_offensive_metrics + physical_defensive_metrics + 
+    offensive_metrics + defensive_metrics + goal_threat_metrics
+))
+
+data['Overall Score'] = scaler.fit_transform(
+    quantile_transformer.fit_transform(data[all_metrics].fillna(0))
+).mean(axis=1)
+
 # Ensure 'authenticated' is in session state before anything else
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
@@ -336,7 +347,7 @@ else:
 
     # Use a container to make the expandable sections span the full width
     with st.container():
-        tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
+        tooltip_headers = {metric: glossary.get(metric, '') for metric in ['Overall Score', 'Offensive Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + physical_metrics + offensive_metrics + defensive_metrics}
 
         def display_metric_tables(metrics_list, title):
             with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
@@ -380,7 +391,7 @@ else:
 
                         st.write(top10_html, unsafe_allow_html=True)
 
-        display_metric_tables(['Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
+        display_metric_tables(['Overall Score', 'Offensive Score', 'Goal Threat Score', 'Defensive Score', 'Physical Offensive Score', 'Physical Defensive Score'], "Score Metrics")
         display_metric_tables(physical_offensive_metrics, "Physical Offensive Metrics")
         display_metric_tables(physical_defensive_metrics, "Physical Defensive Metrics")
         display_metric_tables(offensive_metrics, "Offensive Metrics")
@@ -390,7 +401,7 @@ else:
     with st.expander("Glossary"):
         sections = {
             "Score Metrics": [
-                'Defensive Score', 'Goal Threat Score', 'Offensive Score', 
+                'Overall Score', 'Defensive Score', 'Goal Threat Score', 'Offensive Score', 
                 'Physical Defensive Score', 'Physical Offensive Score'
             ],
             "Offensive Metrics": [

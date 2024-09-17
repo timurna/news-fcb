@@ -66,7 +66,7 @@ glossary = {
     'Overall Score': 'Player\'s overall performance across all metrics.',
     'Defensive Score': 'Player\'s overall defensive performance. Metrics: TcklMade%, TcklAtt, Tckl, AdjTckl, TcklA3, Blocks, Int, AdjInt, Clrnce',
     'Goal Threat Score': 'Player\'s threat to score goals. Metrics: Goal, Shot/Goal, MinPerGoal, ExpG, xGOT, xG +/-, Shot, SOG, Shot conversion, OnTarget%',
-    'Offensive Score': 'Player\'s overall offensive performance. Metrics: 2ndAst, Ast, ExpG, ExpGExPn, Goal, GoalExPn, KeyPass, MinPerChnc, MinPerGoal, PsAtt, PsCmp, Pass%, PsIntoA3rd, PsRec, ProgCarry, ProgPass, Shot, Shot conversion, Shot/Goal, SOG, OnTarget%, Success1v1, Take on into the Box, TakeOn, ThrghBalls, TouchOpBox, Touches, xA, xA +/-, xG +/-, xGOT',
+    'Offensive Score': 'Player\'s overall offensive performance. Metrics: 2ndAst, Ast, ExpG, ExpGExPn, Goal, GoalExPn, KeyPass, MinPerChnc, MinPerGoal, PsAtt, PsCmp, Pass%, PsIntoA3rd, PsRec, ProgCarry, ProgPass, Shot, Shot conversion, Shot/Goal, SOG, Success1v1, Take on into the Box, TakeOn, ThrghBalls, TouchOpBox, Touches, xA, xA +/-, xG +/-, xGOT',
     'Physical Offensive Score': 'Player\'s physical contributions to offensive play. Metrics: PSV-99, Distance, M/min, HSR Distance, HSR Count, Sprint Distance, Sprint Count, HI Distance, HI Count, Medium Acceleration Count, High Acceleration Count, Medium Deceleration Count, High Deceleration Count',
     'Physical Defensive Score': 'Player\'s physical contributions to defensive play. Metrics: Distance OTIP, M/min OTIP, HSR Distance OTIP, HSR Count OTIP, Sprint Distance OTIP, Sprint Count OTIP, HI Distance OTIP, HI Count OTIP, Medium Acceleration Count OTIP, High Acceleration Count OTIP, Medium Deceleration Count OTIP, High Deceleration Count OTIP',
     
@@ -151,9 +151,6 @@ data['DOB'] = pd.to_datetime(data['DOB'])
 today = datetime.today()
 data['Age'] = data['DOB'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
 
-# Ensure 'Date' is in datetime format
-data['Date'] = pd.to_datetime(data['Date'])
-
 # Define position groups with potential overlaps
 position_groups = {
     'IV': ['Left Centre Back', 'Right Centre Back', 'Central Defender'],
@@ -178,7 +175,7 @@ percentage_metrics = ['TcklMade%', 'Pass%', 'OnTarget%']
 # Remove percentage signs and convert to numeric
 for metric in percentage_metrics:
     if metric in data.columns:
-        data[metric] = pd.to_numeric(data[metric].astype(str).str.replace('%', ''), errors='coerce')
+        data[metric] = pd.to_numeric(data[metric].str.replace('%', ''), errors='coerce')
 
 # Convert other text-based numbers to numeric
 physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance', 'Sprint Count',
@@ -274,23 +271,6 @@ data['Overall Score'] = scaler.fit_transform(
     quantile_transformer.fit_transform(data[all_metrics].fillna(0))
 ).mean(axis=1)
 
-# **Calculate Cumulative Averages for Metrics**
-
-# Ensure the data is sorted
-data = data.sort_values(['League', 'playerFullName', 'Date'])
-
-# Create a list of metrics for which we want cumulative averages
-metrics_for_cum_avg = ['Overall Score', 'Offensive Score', 'Defensive Score', 
-                       'Physical Offensive Score', 'Physical Defensive Score', 'Goal Threat Score'] + \
-                       physical_offensive_metrics + physical_defensive_metrics + offensive_metrics + defensive_metrics
-
-# Remove duplicates
-metrics_for_cum_avg = list(set(metrics_for_cum_avg))
-
-# Calculate cumulative averages for each player in each league
-for metric in metrics_for_cum_avg:
-    data[f'{metric}_cum_avg'] = data.groupby(['League', 'playerFullName'])[metric].expanding().mean().reset_index(level=[0,1], drop=True)
-
 # Ensure 'authenticated' is in session state before anything else
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
@@ -354,17 +334,14 @@ else:
 
             selected_week = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['Week'].values[0]
 
-            # Get the date of the selected matchday
-            selected_date = filtered_weeks[filtered_weeks['Matchday'] == selected_matchday]['max'].values[0]
-
         with col3:
             position_group_options = list(position_groups.keys())
             selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
 
-    # Filter the data by the selected position group and up to the selected matchday
+    # Filter the data by the selected position group
     league_and_position_data = data[
         (data['League'] == selected_league) &
-        (data['Date'] <= selected_date) &
+        (data['Week'] == selected_week) &
         (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
     ]
 
@@ -379,14 +356,12 @@ else:
                         st.write(f"Metric {metric} not found in the data")
                         continue
 
-                    # Filter data to the selected matchday
-                    current_matchday_data = league_and_position_data[league_and_position_data['Date'] == selected_date]
+                    league_and_position_data[metric] = pd.to_numeric(league_and_position_data[metric], errors='coerce')
 
                     # Round the Age column to ensure no decimals
-                    current_matchday_data['Age'] = current_matchday_data['Age'].round(0).astype(int)
+                    league_and_position_data['Age'] = league_and_position_data['Age'].round(0).astype(int)
 
-                    # Prepare the data
-                    top10 = current_matchday_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric, f'{metric}_cum_avg']].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                    top10 = league_and_position_data[['playerFullName', 'Age', 'newestTeam', 'Position_x', metric]].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
                     if top10.empty:
                         st.header(f"Top 10 Players in {metric}")
@@ -402,15 +377,7 @@ else:
 
                         st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
                         top10.rename(columns={'playerFullName': 'Player', 'newestTeam': 'Team', 'Position_x': 'Position'}, inplace=True)
-
-                        # Format the metric value with cumulative average
-                        top10[metric] = top10.apply(
-                            lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})" if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
-                            axis=1
-                        )
-
-                        # Remove the cumulative average column from the DataFrame as it's now included in the metric column
-                        top10.drop(columns=[f'{metric}_cum_avg'], inplace=True)
+                        top10[metric] = top10[metric].apply(lambda x: f"{x:.2f}")
 
                         def color_row(row):
                             return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
@@ -450,18 +417,19 @@ else:
                 'TcklAtt', 'Tckl', 'TcklMade%', 'TcklA3'
             ],
             "Physical Offensive Metrics": [
-                'PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 
+                'Distance', 'M/min', 'HSR Distance', 'HSR Count', 
                 'Sprint Distance', 'Sprint Count', 'HI Distance', 
                 'HI Count', 'Medium Acceleration Count', 
                 'High Acceleration Count', 'Medium Deceleration Count', 
                 'High Deceleration Count'
             ],
             "Physical Defensive Metrics": [
-                'Distance OTIP', 'M/min OTIP', 'HSR Distance OTIP', 
-                'HSR Count OTIP', 'Sprint Distance OTIP', 'Sprint Count OTIP',
-                'HI Distance OTIP', 'HI Count OTIP', 'Medium Acceleration Count OTIP', 
-                'High Acceleration Count OTIP', 'Medium Deceleration Count OTIP', 
-                'High Deceleration Count OTIP'
+                'Distance OTIP', 'M/min OTIP', 'HI Distance OTIP', 
+                'HI Count OTIP', 'High Acceleration Count OTIP', 
+                'High Deceleration Count OTIP', 'HSR Count OTIP', 
+                'HSR Distance OTIP', 'Medium Acceleration Count OTIP', 
+                'Medium Deceleration Count OTIP', 'Sprint Count OTIP', 
+                'Sprint Distance OTIP'
             ]
         }
 

@@ -115,8 +115,8 @@ def login():
     # Load the dataset **only** after successful login
     data = download_and_load_data(file_url)
 
-        # Glossary content with metrics integrated
-        glossary = {
+    # Glossary content with metrics integrated
+    glossary = {
             'Score Metrics': '',
             'Overall Score': 'Player\'s overall performance across all metrics.',
             'Defensive Score': 'Player\'s overall defensive performance. Metrics: TcklMade%, TcklAtt, Tckl, AdjTckl, TcklA3, Blocks, Int, AdjInt, Clrnce',

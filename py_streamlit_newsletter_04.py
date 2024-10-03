@@ -45,13 +45,6 @@ def login():
 
     st.button("Login", on_click=authenticate_and_login)
 
-# Ensure proper authentication
-if not st.session_state.authenticated:
-    login()
-else:
-    # User is authenticated
-    st.write("Welcome! You are logged in.")
-
     # Function to apply custom CSS for mobile responsiveness
     def set_mobile_css():
         st.markdown(
@@ -121,15 +114,6 @@ else:
 
     # Load the dataset **only** after successful login
     data = download_and_load_data(file_url)
-
-    # Check if the data was loaded successfully
-    if data is None:
-        st.error("Failed to load data")
-        st.stop()
-    else:
-        # Proceed with your app
-        set_mobile_css()
-        st.write("Data successfully loaded!")
 
         # Glossary content with metrics integrated
         glossary = {

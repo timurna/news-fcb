@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
-import requests
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
-import os
+import gdown
 
 # Set the page configuration to wide mode
 st.set_page_config(layout="wide")
@@ -45,6 +44,67 @@ def login():
 
     st.button("Login", on_click=authenticate_and_login)
 
+# Function to apply custom CSS for mobile responsiveness
+def set_mobile_css():
+    st.markdown(
+        """
+        <style>
+        /* Your CSS styles */
+        /* Example CSS */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Position above the text */
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
+# Function to download and load the file from Google Drive
+@st.cache_data
+def download_and_load_data(file_url, data_version):
+    # Define the file path for the downloaded parquet file
+    parquet_file = f'/tmp/newupclean3_{data_version}.parquet'
+
+    # Download the file using gdown with fuzzy=True
+    try:
+        gdown.download(url=file_url, output=parquet_file, quiet=False, fuzzy=True)
+    except Exception as e:
+        st.error(f"Error downloading file: {e}")
+        return None
+
+    # Load the parquet file using pandas
+    try:
+        data = pd.read_parquet(parquet_file)
+        data['DOB'] = pd.to_datetime(data['DOB'])
+        data['Date'] = pd.to_datetime(data['Date'])
+        return data
+    except Exception as e:
+        st.error(f"Error reading parquet file: {e}")
+        return None
+
 # Ensure proper authentication
 if not st.session_state.authenticated:
     login()
@@ -52,75 +112,10 @@ else:
     # User is authenticated
     st.write("Welcome! You are logged in.")
 
-    # Function to apply custom CSS for mobile responsiveness
-    def set_mobile_css():
-        st.markdown(
-            """
-            <style>
-            /* Your CSS styles */
-            /* Example CSS */
-            .tooltip {
-                position: relative;
-                display: inline-block;
-                cursor: pointer;
-            }
-
-            .tooltip .tooltiptext {
-                visibility: hidden;
-                width: 200px;
-                background-color: #555;
-                color: #fff;
-                text-align: center;
-                border-radius: 6px;
-                padding: 5px;
-                position: absolute;
-                z-index: 1;
-                bottom: 125%; /* Position above the text */
-                left: 50%;
-                margin-left: -100px;
-                opacity: 0;
-                transition: opacity 0.3s;
-            }
-
-            .tooltip:hover .tooltiptext {
-                visibility: visible;
-                opacity: 1;
-            }
-            </style>
-            """, unsafe_allow_html=True
-        )
-
-    # Function to download and load the file from Google Drive
-    @st.cache_data
-    def download_and_load_data(url):
-        # Define the file path for the downloaded parquet file
-        parquet_file = '/tmp/newupclean3.parquet'
-
-        # Download the file using requests
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            with open(parquet_file, 'wb') as f:
-                f.write(response.content)
-        except requests.exceptions.RequestException as e:
-            st.error(f"Error downloading file: {e}")
-            return None
-
-        # Load the parquet file using pandas
-        try:
-            data = pd.read_parquet(parquet_file)
-            data['DOB'] = pd.to_datetime(data['DOB'])
-            data['Date'] = pd.to_datetime(data['Date'])
-            return data
-        except Exception as e:
-            st.error(f"Error reading parquet file: {e}")
-            return None
-
-    # Google Drive direct download link
-    file_url = 'https://drive.google.com/uc?export=download&id=1L209KlTQfjYt9yhTs-seO-FkEa5_68hU'
-    
     # Load the dataset **only** after successful login
-    data = download_and_load_data(file_url)
+    file_url = 'https://drive.google.com/uc?id=1L209KlTQfjYt9yhTs-seO-FkEa5_68hU'
+    data_version = 'v2'  # Update this to a new value when your data changes
+    data = download_and_load_data(file_url, data_version)
 
     # Check if the data was loaded successfully
     if data is None:
@@ -400,10 +395,11 @@ else:
                 position_group_options = list(position_groups.keys())
                 selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group")
 
-        # Filter the data by the selected position group and up to the selected matchday
+        # **Updated Filtering:**
+        # Filter the data by the selected position group and the selected matchday
         league_and_position_data = data[
             (data['League'] == selected_league) &
-            (data['Date'] <= selected_date) &
+            (data['Week'] == selected_week) &
             (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
         ]
 
@@ -418,7 +414,7 @@ else:
                             st.write(f"Metric {metric} not found in the data")
                             continue
 
-                        # Get the latest data for each player up to the selected date
+                        # Get the data for each player in the selected matchday
                         latest_data = league_and_position_data.sort_values(['playerFullName', 'Date']).groupby('playerFullName').last().reset_index()
 
                         # Round the Age column to ensure no decimals

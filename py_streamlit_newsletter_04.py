@@ -192,8 +192,14 @@ else:
 
                 filtered_weeks = week_summary[week_summary['League'] == selected_league].sort_values(by='max', ascending=False).drop_duplicates(subset=['Week'])
 
-                # Add 'All' at the top of matchday options
-                matchday_options = ['All'] + filtered_weeks['Matchday'].tolist()
+                # Calculate the number of matchdays
+                num_matchdays = len(filtered_weeks)
+
+                # Create 'All (X)' option
+                all_option = f"All ({num_matchdays})"
+
+                # Add 'All (X)' at the top of matchday options
+                matchday_options = [all_option] + filtered_weeks['Matchday'].tolist()
 
                 # Replace selectbox with multiselect including 'All'
                 selected_matchdays = st.multiselect("Select Matchdays", matchday_options, key="select_matchdays", on_change=reset_run)
@@ -203,8 +209,8 @@ else:
                     st.warning("Please select at least one matchday.")
                     st.stop()
 
-                # If 'All' is selected, use all matchdays
-                if 'All' in selected_matchdays:
+                # If 'All (X)' is selected, use all matchdays
+                if all_option in selected_matchdays:
                     selected_matchdays = filtered_weeks['Matchday'].tolist()
 
                 selected_weeks = filtered_weeks[filtered_weeks['Matchday'].isin(selected_matchdays)]['Week'].unique().tolist()
@@ -226,83 +232,89 @@ else:
 
             # Glossary content with metrics integrated
             glossary = {
-                'Ratings': '',
+                'Ratings': 'A collection of aggregated performance metrics.',
                 'Overall Rating': 'Player\'s overall performance across all metrics.',
-                'Defensive Rating': 'Player\'s overall defensive performance. Metrics: TcklMade%, TcklAtt, Tckl, AdjTckl, TcklA3, Blocks, Int, AdjInt, Clrnce',
-                'Goal Threat Rating': 'Player\'s threat to score goals. Metrics: Goal, Shot/Goal, MinPerGoal, ExpG, xGOT, xG +/- , Shot, SOG, Shot conversion, OnTarget%',
-                'Offensive Rating': 'Player\'s overall offensive performance. Metrics: 2ndAst, Ast, ExpG, ExpGExPn, Goal, GoalExPn, KeyPass, MinPerChnc, MinPerGoal, PsAtt, PsCmp, Pass%, PsIntoA3rd, PsRec, ProgCarry, ProgPass, Shot, Shot conversion, Shot/Goal, SOG, OnTarget%, Success1v1, Take on into the Box, TakeOn, ThrghBalls, TouchOpBox, Touches, xA, xA +/- , xG +/- , xGOT',
-                'Physical Offensive Rating': 'Player\'s physical contributions to offensive play. Metrics: PSV-99, Distance, M/min, HSR Distance, HSR Count, Sprint Distance, Sprint Count, HI Distance, HI Count, Medium Acceleration Count, High Acceleration Count, Medium Deceleration Count, High Deceleration Count',
-                'Physical Defensive Rating': 'Player\'s physical contributions to defensive play. Metrics: Distance OTIP, M/min OTIP, HSR Distance OTIP, HSR Count OTIP, Sprint Distance OTIP, Sprint Count OTIP, HI Distance OTIP, HI Count OTIP, Medium Acceleration Count OTIP, High Acceleration Count OTIP, Medium Deceleration Count OTIP, High Deceleration Count OTIP',
-                'Offensive Metrics': '',
-                '2ndAst': 'The pass that assists the assist leading to a goal.',
+                'Defensive Rating': 'Player\'s overall defensive performance. Metrics include various defensive actions.',
+                'Goal Threat Rating': 'Player\'s threat to score goals. Metrics include shots, expected goals, etc.',
+                'Offensive Rating': 'Player\'s overall offensive performance. Metrics include assists, key passes, etc.',
+                'Physical Offensive Rating': 'Player\'s physical contributions to offensive play.',
+                'Physical Defensive Rating': 'Player\'s physical contributions to defensive play.',
+                'Min': 'Minutes played in the selected matchday(s) (total minutes played across all matchdays)',
+                # Physical Metrics
+                'PSV-99': 'Player\'s physical performance score compared to peers.',
+                'Distance': 'Total distance covered by the player.',
+                'M/min': 'Meters covered per minute.',
+                'HSR Distance': 'High-speed running distance.',
+                'HSR Count': 'Number of high-speed runs.',
+                'Sprint Distance': 'Total sprint distance.',
+                'Sprint Count': 'Number of sprints.',
+                'HI Distance': 'High-intensity running distance.',
+                'HI Count': 'Number of high-intensity runs.',
+                'Medium Acceleration Count': 'Number of medium accelerations.',
+                'High Acceleration Count': 'Number of high accelerations.',
+                'Medium Deceleration Count': 'Number of medium decelerations.',
+                'High Deceleration Count': 'Number of high decelerations.',
+                'Distance OTIP': 'Distance covered out of team possession.',
+                'M/min OTIP': 'Meters per minute out of team possession.',
+                'HSR Distance OTIP': 'High-speed running distance out of team possession.',
+                'HSR Count OTIP': 'High-speed run count out of team possession.',
+                'Sprint Distance OTIP': 'Sprint distance out of team possession.',
+                'Sprint Count OTIP': 'Sprint count out of team possession.',
+                'HI Distance OTIP': 'High-intensity distance out of team possession.',
+                'HI Count OTIP': 'High-intensity count out of team possession.',
+                'Medium Acceleration Count OTIP': 'Medium accelerations out of team possession.',
+                'High Acceleration Count OTIP': 'High accelerations out of team possession.',
+                'Medium Deceleration Count OTIP': 'Medium decelerations out of team possession.',
+                'High Deceleration Count OTIP': 'High decelerations out of team possession.',
+                # Offensive Metrics
+                '2ndAst': 'Secondary assists.',
                 'Ast': 'Assists.',
                 'ExpG': 'Expected goals.',
                 'ExpGExPn': 'Expected goals excluding penalties.',
                 'Goal': 'Goals scored.',
                 'GoalExPn': 'Goals excluding penalties.',
-                'KeyPass': 'Passes that directly lead to a shot on goal.',
+                'KeyPass': 'Passes leading directly to a shot.',
                 'MinPerChnc': 'Minutes per chance created.',
-                'MinPerGoal': 'Minutes per goal.',
-                'OnTarget%': 'Percentage of shots on target out of total shots.',
+                'MinPerGoal': 'Minutes per goal scored.',
                 'PsAtt': 'Passes attempted.',
                 'PsCmp': 'Passes completed.',
-                'Pass%': 'Percentage of completed passes out of total passes attempted.',
+                'Pass%': 'Pass completion percentage.',
                 'PsIntoA3rd': 'Passes into the attacking third.',
-                'PsRec': 'Passes received by the player.',
-                'ProgCarry': 'Progressive carries, advancing the ball significantly.',
-                'ProgPass': 'Progressive passes, advancing the ball significantly.',
-                'Shot': 'Total shots taken.',
-                'Shot conversion': 'Shots on target per goal.',
-                'Shot/Goal': 'Total shots per goal.',
+                'PsRec': 'Passes received.',
+                'ProgCarry': 'Progressive carries.',
+                'ProgPass': 'Progressive passes.',
+                'Shot': 'Shots taken.',
+                'Shot conversion': 'Percentage of shots resulting in goals.',
+                'Shot/Goal': 'Shots per goal.',
                 'SOG': 'Shots on goal.',
-                'Success1v1': 'Successful dribbles against an opponent.',
-                'Take on into the Box': 'Number of successful dribbles into the penalty box.',
-                'TakeOn': 'Attempted dribbles against an opponent.',
-                'ThrghBalls': 'Through balls played.',
-                'TouchOpBox': 'Number of touches in the opponent\'s penalty box.',
-                'Touches': 'Total number of touches.',
+                'OnTarget%': 'Percentage of shots on target.',
+                'Success1v1': 'Successful one-on-one take-ons.',
+                'Take on into the Box': 'Take-ons into the penalty box.',
+                'TakeOn': 'Total take-ons attempted.',
+                'ThrghBalls': 'Through balls.',
+                'TouchOpBox': 'Touches in the opposition box.',
+                'Touches': 'Total touches.',
                 'xA': 'Expected assists.',
-                'xA +/-': 'Expected assists compared to actual assists.',
-                'xG +/-': 'Expected goals compared to actual goals.',
+                'xA +/-': 'Expected assists above or below average.',
+                'xG +/-': 'Expected goals above or below average.',
                 'xGOT': 'Expected goals on target.',
-                'Defensive Metrics': '',
-                'AdjInt': 'Adjusted interceptions, considering context.',
-                'AdjTckl': 'Adjusted tackles, considering context.',
-                'Blocks': 'Total blocks made.',
-                'Clrnce': 'Clearances made.',
-                'Int': 'Interceptions made.',
+                # Defensive Metrics
+                'AdjInt': 'Adjusted interceptions.',
+                'AdjTckl': 'Adjusted tackles.',
+                'Blocks': 'Blocks made.',
+                'Clrnce': 'Clearances.',
+                'Int': 'Interceptions.',
+                'TcklAtt': 'Tackle attempts.',
                 'Tckl': 'Tackles made.',
-                'TcklMade%': 'Percentage of tackles successfully made out of total tackle attempts.',
-                'TcklA3': 'Tackles made in the attacking third.',
-                'TcklAtt': 'Tackles attempted.',
-                'Physical Metrics': '',
-                'PSV-99': 'Peak Sprint Velocity (Maximum Speed).',
-                'Distance': 'Total distance covered by the player during the match.',
-                'Distance OTIP': 'Distance covered while opponent has ball possession (OTIP).',
-                'HI Count': 'High-intensity actions performed.',
-                'HI Count OTIP': 'High-intensity actions performed while opponent has ball possession (OTIP).',
-                'HI Distance': 'High-intensity distance covered.',
-                'HI Distance OTIP': 'High-intensity distance covered while opponent has ball possession (OTIP).',
-                'High Acceleration Count': 'High-intensity accelerations performed.',
-                'High Acceleration Count OTIP': 'High-intensity accelerations performed while opponent has ball possession (OTIP).',
-                'High Deceleration Count': 'High-intensity decelerations performed.',
-                'High Deceleration Count OTIP': 'High-intensity decelerations performed while opponent has ball possession (OTIP).',
-                'HSR Count': 'Count of high-speed running actions.',
-                'HSR Count OTIP': 'High-speed running actions performed while opponent has ball possession (OTIP).',
-                'HSR Distance': 'High-speed running distance covered.',
-                'HSR Distance OTIP': 'High-speed running distance covered while opponent has ball possession (OTIP).',
-                'M/min': 'Meters covered per minute by the player.',
-                'M/min OTIP': 'Meters per minute covered while opponent has ball possession (OTIP).',
-                'Medium Acceleration Count': 'Medium-intensity accelerations performed.',
-                'Medium Acceleration Count OTIP': 'Medium-intensity accelerations performed while opponent has ball possession (OTIP).',
-                'Medium Deceleration Count': 'Medium-intensity decelerations performed.',
-                'Medium Deceleration Count OTIP': 'Medium-intensity decelerations performed while opponent has ball possession (OTIP).',
-                'Sprint Count': 'Total sprints performed.',
-                'Sprint Count OTIP': 'Sprint actions performed while opponent has ball possession (OTIP).',
-                'Sprint Distance': 'Total distance covered while sprinting.',
-                'Sprint Distance OTIP': 'Sprint distance covered while opponent has ball possession (OTIP).'
+                'TcklMade%': 'Percentage of successful tackles.',
+                'TcklA3': 'Tackles in the attacking third.',
+                # Percentage Metrics
+                'OnTarget%': 'Percentage of shots on target.',
+                'Pass%': 'Pass completion percentage.',
+                'TcklMade%': 'Percentage of tackles made successfully.',
             }
 
+            # Perform data processing steps here
             # Calculate age from birthdate
             data['DOB'] = pd.to_datetime(data['DOB'])
             today = datetime.today()
@@ -354,6 +366,13 @@ else:
             for metric in all_metrics:
                 if metric in data.columns and metric not in percentage_metrics:  # Exclude percentage metrics already processed
                     data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
+
+            # Ensure 'Min' column is numeric
+            if 'Min' in data.columns:
+                data['Min'] = pd.to_numeric(data['Min'], errors='coerce')
+            else:
+                st.error("Column 'Min' not found in data.")
+                st.stop()
 
             # Fill NaN values with 0 only for players who have any non-NaN value in the group of metrics
             def fill_na_conditionally(df, metric_group):
@@ -462,7 +481,7 @@ else:
                 tooltip_headers = {metric: glossary.get(metric, '') for metric in rating_metrics + physical_metrics + offensive_metrics + defensive_metrics}
 
                 def display_metric_tables(metrics_list, title):
-                    with st.expander(title, expanded=False):  # Setting expanded=False to keep it closed by default
+                    with st.expander(title, expanded=False):
                         for metric in metrics_list:
                             if metric not in data.columns:
                                 st.write(f"Metric {metric} not found in the data")
@@ -476,10 +495,10 @@ else:
                             elif metric in average_metrics or metric in percentage_metrics:
                                 agg_func = 'mean'
                             else:
-                                agg_func = 'mean'  # Default to mean if unsure
+                                agg_func = 'mean'
 
                             # Define the aggregation dictionary
-                            agg_dict = {'Age': 'last', metric: agg_func, f'{metric}_cum_avg': 'last'}
+                            agg_dict = {'Age': 'last', metric: agg_func, f'{metric}_cum_avg': 'last', 'Min': 'sum'}
 
                             # Include 'Team' and 'Position' if they exist
                             # Identify the team column
@@ -509,8 +528,20 @@ else:
                             # Round the Age column to ensure no decimals
                             latest_data['Age'] = latest_data['Age'].round(0).astype(int)
 
+                            # Calculate total minutes played across all matchdays
+                            minutes_total = data.groupby('playerFullName')['Min'].sum().reset_index()
+                            minutes_total.rename(columns={'Min': 'Min_Total'}, inplace=True)
+
+                            # Merge total minutes into latest_data
+                            latest_data = latest_data.merge(minutes_total, on='playerFullName', how='left')
+
+                            # Format the Min column
+                            latest_data['Min'] = latest_data.apply(
+                                lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})", axis=1
+                            )
+
                             # Prepare the data
-                            columns_to_select = ['playerFullName', 'Age', team_column, position_column, metric, f'{metric}_cum_avg']
+                            columns_to_select = ['playerFullName', 'Age', team_column, position_column, 'Min', metric, f'{metric}_cum_avg']
                             available_columns = [col for col in columns_to_select if col in latest_data.columns]
                             top10 = latest_data[available_columns].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
 
@@ -518,15 +549,17 @@ else:
                                 st.header(f"Top 10 Players in {metric}")
                                 st.write("No data available")
                             else:
-                                # Reset the index to create a rank column starting from 1
+                                # Reset the index and create 'Rank' column
                                 top10.reset_index(drop=True, inplace=True)
-                                top10.index += 1
-                                top10.index.name = 'Rank'
+                                top10['Rank'] = top10.index + 1
 
-                                # Ensure the Rank column is part of the DataFrame before styling
-                                top10 = top10.reset_index()
+                                # Move 'Rank' to the front
+                                cols = ['Rank'] + [col for col in top10.columns if col != 'Rank']
+                                top10 = top10[cols]
 
-                                st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+                                # Set 'Rank' as the index
+                                top10.set_index('Rank', inplace=True)
+
                                 top10.rename(columns={'playerFullName': 'Player', position_column: 'Position'}, inplace=True)
 
                                 if team_column:
@@ -538,96 +571,27 @@ else:
                                     axis=1
                                 )
 
-                                # Remove the cumulative average column from the DataFrame as it's now included in the metric column
+                                # Remove the cumulative average column
                                 top10.drop(columns=[f'{metric}_cum_avg'], inplace=True)
 
+                                # Reorder columns to place 'Min' after 'Position'
+                                cols = ['Player', 'Age', 'Team', 'Position', 'Min', metric]
+                                top10 = top10[cols]
+
+                                st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+
+                                # Apply conditional formatting to highlight U24 players
                                 def color_row(row):
-                                    return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
+                                    if row['Age'] < 24:
+                                        return ['background-color: #d4edda'] * len(row)
+                                    else:
+                                        return [''] * len(row)
 
                                 top10_styled = top10.style.apply(color_row, axis=1)
-                                top10_html = top10_styled.to_html()
 
-                                for header, tooltip in tooltip_headers.items():
-                                    if tooltip:
-                                        top10_html = top10_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
-
-                                st.write(top10_html, unsafe_allow_html=True)
-
-                            # If the metric is 'PSV-99', also display the overall top 10
-                            if metric == 'PSV-99':
-                                # For 'PSV-99', use data filtered only by league and selected weeks (matchdays), ignore position group
-                                metric_data_overall = data[
-                                    (data['League'] == selected_league) &
-                                    (data['Week'].isin(selected_weeks))
-                                ]
-
-                                # Aggregate the data over the selected matchdays
-                                agg_dict_overall = {'Age': 'last', metric: 'mean', f'{metric}_cum_avg': 'last'}
-                                if 'Team' in metric_data_overall.columns:
-                                    agg_dict_overall['Team'] = 'last'
-                                    team_column_overall = 'Team'
-                                elif 'Team_x' in metric_data_overall.columns:
-                                    agg_dict_overall['Team_x'] = 'last'
-                                    team_column_overall = 'Team_x'
-                                elif 'Squad' in metric_data_overall.columns:
-                                    agg_dict_overall['Squad'] = 'last'
-                                    team_column_overall = 'Squad'
-                                else:
-                                    st.warning("Team column not found in data.")
-                                    team_column_overall = None
-
-                                if position_column in metric_data_overall.columns:
-                                    agg_dict_overall[position_column] = 'last'
-
-                                latest_data_overall = metric_data_overall.groupby('playerFullName').agg(agg_dict_overall).reset_index()
-
-                                # Round the Age column to ensure no decimals
-                                latest_data_overall['Age'] = latest_data_overall['Age'].round(0).astype(int)
-
-                                # Prepare the data
-                                columns_to_select_overall = ['playerFullName', 'Age', team_column_overall, position_column, metric, f'{metric}_cum_avg']
-                                available_columns_overall = [col for col in columns_to_select_overall if col in latest_data_overall.columns]
-                                top10_overall = latest_data_overall[available_columns_overall].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
-
-                                if top10_overall.empty:
-                                    st.header(f"Top 10 Players in {metric} (Overall)")
-                                    st.write("No data available")
-                                else:
-                                    # Reset the index to create a rank column starting from 1
-                                    top10_overall.reset_index(drop=True, inplace=True)
-                                    top10_overall.index += 1
-                                    top10_overall.index.name = 'Rank'
-
-                                    # Ensure the Rank column is part of the DataFrame before styling
-                                    top10_overall = top10_overall.reset_index()
-
-                                    st.markdown(f"<h2>{metric} (Overall)</h2>", unsafe_allow_html=True)
-                                    top10_overall.rename(columns={'playerFullName': 'Player', position_column: 'Position'}, inplace=True)
-
-                                    if team_column_overall:
-                                        top10_overall.rename(columns={team_column_overall: 'Team'}, inplace=True)
-
-                                    # Format the metric value with cumulative average
-                                    top10_overall[metric] = top10_overall.apply(
-                                        lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})" if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
-                                        axis=1
-                                    )
-
-                                    # Remove the cumulative average column from the DataFrame as it's now included in the metric column
-                                    top10_overall.drop(columns=[f'{metric}_cum_avg'], inplace=True)
-
-                                    def color_row(row):
-                                        return ['background-color: #d4edda' if row['Age'] < 24 else '' for _ in row]
-
-                                    top10_overall_styled = top10_overall.style.apply(color_row, axis=1)
-                                    top10_overall_html = top10_overall_styled.to_html()
-
-                                    for header, tooltip in tooltip_headers.items():
-                                        if tooltip:
-                                            top10_overall_html = top10_overall_html.replace(f'>{header}<', f'><span class="tooltip">{header}<span class="tooltiptext">{tooltip}</span></span><')
-
-                                    st.write(top10_overall_html, unsafe_allow_html=True)
-
+                                # Display the table using st.dataframe
+                                st.dataframe(top10_styled)
+                                
                 # Call the display_metric_tables function with updated metric names
                 display_metric_tables(['Overall Rating', 'Offensive Rating', 'Goal Threat Rating', 'Defensive Rating', 'Physical Offensive Rating', 'Physical Defensive Rating'], "Ratings")
                 display_metric_tables(physical_offensive_metrics, "Physical Offensive Metrics")

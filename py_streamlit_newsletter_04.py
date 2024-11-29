@@ -458,6 +458,24 @@ else:
                 (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
             ]
 
+            # **Data for Mentions Calculation:**
+            # Data filtered by League and Position Group only (all matchdays)
+            league_position_all_data = data[
+                (data['League'] == selected_league) &
+                (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
+            ]
+
+            # Identify the team column globally
+            if 'Team' in data.columns:
+                team_column = 'Team'
+            elif 'Team_x' in data.columns:
+                team_column = 'Team_x'
+            elif 'Squad' in data.columns:
+                team_column = 'Squad'
+            else:
+                st.warning("Team column not found in data.")
+                team_column = None
+
             # Define metrics that are counts and should be summed
             count_metrics = [
                 'Goal', 'Ast', 'KeyPass', 'Shot', 'SOG', 'TakeOn', 'Success1v1', 'Blocks', 'Int', 'Clrnce',
@@ -476,10 +494,202 @@ else:
                 'HI Distance OTIP', 'HSR Distance', 'HSR Distance OTIP', 'Sprint Distance', 'Sprint Distance OTIP'
             ] + rating_metrics
 
+            # **Collect Mentions Over All Matchdays**
+            # Get all unique matchdays in the data for the selected league and position group
+            all_weeks = league_position_all_data['Week'].unique()
+
+            # Initialize mentions_dict
+            mentions_dict = {}
+            rating_metrics_to_collect = ['Overall Rating', 'Offensive Rating', 'Goal Threat Rating', 'Defensive Rating', 'Physical Offensive Rating', 'Physical Defensive Rating']
+
+            for week in all_weeks:
+                week_data = league_position_all_data[league_position_all_data['Week'] == week]
+
+                for metric in rating_metrics_to_collect:
+                    if metric not in data.columns:
+                        continue
+
+                    metric_data = week_data
+
+                    # Determine aggregation function
+                    if metric in count_metrics:
+                        agg_func = 'sum'
+                    elif metric in average_metrics or metric in percentage_metrics:
+                        agg_func = 'mean'
+                    else:
+                        agg_func = 'mean'
+
+                    # Define the aggregation dictionary
+                    agg_dict = {'Age': 'last', metric: agg_func, 'Min': 'sum'}
+
+                    if team_column:
+                        agg_dict[team_column] = 'last'
+
+                    if position_column in metric_data.columns:
+                        agg_dict[position_column] = 'last'
+
+                    # Perform the aggregation
+                    try:
+                        aggregated_data = metric_data.groupby('playerFullName').agg(agg_dict).reset_index()
+                    except KeyError as e:
+                        st.error(f"Column not found during aggregation for mentions: {e}")
+                        continue
+
+                    # Get top 10 players for this metric in this week
+                    top10 = aggregated_data.dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+
+                    # Collect mentions
+                    for _, row in top10.iterrows():
+                        player = row['playerFullName']
+                        if player not in mentions_dict:
+                            mentions_dict[player] = {'Player': player, 'Age': row['Age'], 'Team': row.get(team_column, ''), 'Position': row.get(position_column, ''), 'Total Mentions': 0}
+                            for m in rating_metrics_to_collect:
+                                mentions_dict[player][m] = 0
+                        mentions_dict[player]['Total Mentions'] += 1
+                        mentions_dict[player][metric] += 1
+
             # Use a container to make the expandable sections span the full width
             with st.container():
                 tooltip_headers = {metric: glossary.get(metric, '') for metric in rating_metrics + physical_metrics + offensive_metrics + defensive_metrics}
 
+                # Start of the "Ratings" section
+                with st.expander("Ratings", expanded=False):
+                    # Now, display the tables for each metric, using selected matchdays
+                    for metric in rating_metrics_to_collect:
+                        if metric not in data.columns:
+                            continue
+
+                        metric_data = league_and_position_data
+
+                        # Determine aggregation function
+                        if metric in count_metrics:
+                            agg_func = 'sum'
+                        elif metric in average_metrics or metric in percentage_metrics:
+                            agg_func = 'mean'
+                        else:
+                            agg_func = 'mean'
+
+                        # Define the aggregation dictionary
+                        agg_dict = {'Age': 'last', metric: agg_func, f'{metric}_cum_avg': 'last', 'Min': 'sum'}
+
+                        if team_column:
+                            agg_dict[team_column] = 'last'
+
+                        if position_column in metric_data.columns:
+                            agg_dict[position_column] = 'last'
+
+                        # Perform the aggregation
+                        try:
+                            latest_data = metric_data.groupby('playerFullName').agg(agg_dict).reset_index()
+                        except KeyError as e:
+                            st.error(f"Column not found during aggregation: {e}")
+                            continue
+
+                        # Round the Age column to ensure no decimals
+                        latest_data['Age'] = latest_data['Age'].round(0).astype(int)
+
+                        # Calculate total minutes played across all matchdays
+                        minutes_total = data.groupby('playerFullName')['Min'].sum().reset_index()
+                        minutes_total.rename(columns={'Min': 'Min_Total'}, inplace=True)
+
+                        # Merge total minutes into latest_data
+                        latest_data = latest_data.merge(minutes_total, on='playerFullName', how='left')
+
+                        # Format the Min column
+                        latest_data['Min'] = latest_data.apply(
+                            lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})", axis=1
+                        )
+
+                        # Prepare the data
+                        columns_to_select = ['playerFullName', 'Age', team_column, position_column, 'Min', metric, f'{metric}_cum_avg']
+                        available_columns = [col for col in columns_to_select if col in latest_data.columns]
+                        top10 = latest_data[available_columns].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+
+                        if top10.empty:
+                            st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+                            st.write("No data available")
+                            continue
+
+                        # Reset the index and create 'Rank' column
+                        top10.reset_index(drop=True, inplace=True)
+                        top10['Rank'] = top10.index + 1
+
+                        # Move 'Rank' to the front
+                        cols = ['Rank'] + [col for col in top10.columns if col != 'Rank']
+                        top10 = top10[cols]
+
+                        # Set 'Rank' as the index
+                        top10.set_index('Rank', inplace=True)
+
+                        top10.rename(columns={'playerFullName': 'Player', position_column: 'Position'}, inplace=True)
+
+                        if team_column:
+                            top10.rename(columns={team_column: 'Team'}, inplace=True)
+
+                        # Format the metric value with cumulative average
+                        top10[metric] = top10.apply(
+                            lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})" if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
+                            axis=1
+                        )
+
+                        # Remove the cumulative average column
+                        top10.drop(columns=[f'{metric}_cum_avg'], inplace=True)
+
+                        # Reorder columns to place 'Min' after 'Position'
+                        cols = ['Player', 'Age', 'Team', 'Position', 'Min', metric]
+                        top10 = top10[cols]
+
+                        st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
+
+                        # Apply conditional formatting to highlight U24 players
+                        def color_row(row):
+                            if row['Age'] < 24:
+                                return ['background-color: #d4edda'] * len(row)
+                            else:
+                                return [''] * len(row)
+
+                        top10_styled = top10.style.apply(color_row, axis=1)
+
+                        # Display the table using st.dataframe
+                        st.dataframe(top10_styled)
+
+                    # After processing ratings, create the table of most mentioned players
+                    if mentions_dict:
+                        mentions_df = pd.DataFrame.from_dict(mentions_dict, orient='index')
+
+                        # Reorder columns
+                        cols = ['Player', 'Age', 'Team', 'Position', 'Total Mentions'] + rating_metrics_to_collect
+                        mentions_df = mentions_df[cols]
+
+                        # **Round 'Age' to remove decimals**
+                        mentions_df['Age'] = mentions_df['Age'].round(0).astype(int)
+
+                        # Sort by Total Mentions descending
+                        mentions_df = mentions_df.sort_values(by='Total Mentions', ascending=False)
+
+                        # Reset index and add 'Rank' column
+                        mentions_df.reset_index(drop=True, inplace=True)
+                        mentions_df['Rank'] = mentions_df.index + 1
+
+                        # Set 'Rank' as the index
+                        mentions_df.set_index('Rank', inplace=True)
+
+                        # **Update the headline**
+                        st.markdown("<h2>Most Mentioned Players</h2>", unsafe_allow_html=True)
+
+                        # Apply conditional formatting to highlight U24 players
+                        def color_row(row):
+                            if row['Age'] < 24:
+                                return ['background-color: #d4edda'] * len(row)
+                            else:
+                                return [''] * len(row)
+
+                        mentions_styled = mentions_df.style.apply(color_row, axis=1)
+
+                        st.dataframe(mentions_styled)
+
+                # Continue with other metric sections
+                # Define a function to display metric tables
                 def display_metric_tables(metrics_list, title):
                     with st.expander(title, expanded=False):
                         for metric in metrics_list:
@@ -500,20 +710,8 @@ else:
                             # Define the aggregation dictionary
                             agg_dict = {'Age': 'last', metric: agg_func, f'{metric}_cum_avg': 'last', 'Min': 'sum'}
 
-                            # Include 'Team' and 'Position' if they exist
-                            # Identify the team column
-                            if 'Team' in metric_data.columns:
-                                agg_dict['Team'] = 'last'
-                                team_column = 'Team'
-                            elif 'Team_x' in metric_data.columns:
-                                agg_dict['Team_x'] = 'last'
-                                team_column = 'Team_x'
-                            elif 'Squad' in metric_data.columns:
-                                agg_dict['Squad'] = 'last'
-                                team_column = 'Squad'
-                            else:
-                                st.warning("Team column not found in data.")
-                                team_column = None
+                            if team_column:
+                                agg_dict[team_column] = 'last'
 
                             if position_column in metric_data.columns:
                                 agg_dict[position_column] = 'last'
@@ -591,9 +789,8 @@ else:
 
                                 # Display the table using st.dataframe
                                 st.dataframe(top10_styled)
-                                
-                # Call the display_metric_tables function with updated metric names
-                display_metric_tables(['Overall Rating', 'Offensive Rating', 'Goal Threat Rating', 'Defensive Rating', 'Physical Offensive Rating', 'Physical Defensive Rating'], "Ratings")
+
+                # Call the display_metric_tables function for other metric sections
                 display_metric_tables(physical_offensive_metrics, "Physical Offensive Metrics")
                 display_metric_tables(physical_defensive_metrics, "Physical Defensive Metrics")
                 display_metric_tables(offensive_metrics, "Offensive Metrics")

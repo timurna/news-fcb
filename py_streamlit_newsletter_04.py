@@ -115,7 +115,7 @@ else:
 
     # Load the dataset **only** after successful login
     file_url = 'https://drive.google.com/uc?id=1iBCnl-ajQiJDS1-kMEECz_t5t5hrMNyE'
-    data_version = 'v5'  # Update this to a new value when your data changes
+    data_version = 'v3'  # Update this to a new value when your data changes
     data = download_and_load_data(file_url, data_version)
 
     # Check if the data was loaded successfully

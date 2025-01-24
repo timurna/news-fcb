@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
 import gdown
+import numpy as np  # <-- We import NumPy for the log1p function
 
 # Set the page configuration to wide mode
 st.set_page_config(layout="wide")
@@ -80,14 +81,15 @@ def set_mobile_css():
             opacity: 1;
         }
         </style>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
 
 # Function to download and load the file from Google Drive
 @st.cache_data
 def download_and_load_data(file_url, data_version):
     # Define the file path for the downloaded parquet file
-    parquet_file = f'/tmp/newup1_{data_version}.parquet'
+    parquet_file = f'/tmp/newup5_{data_version}.parquet'
 
     # Download the file using gdown with fuzzy=True
     try:
@@ -114,7 +116,7 @@ else:
     st.write("Welcome! You are logged in.")
 
     # Load the dataset **only** after successful login
-    file_url = 'https://drive.google.com/uc?id=1V56NTgYn4ug5QoSzC7v8x4EOfC35PY4h'
+    file_url = 'https://drive.google.com/uc?id=1Z6jrYJW0qtALOsLhARvnP0voGIDuRIQA'
     data_version = 'v1'  # Update this to a new value when your data changes
     data = download_and_load_data(file_url, data_version)
 
@@ -153,7 +155,8 @@ else:
 
         # Assign positions to multiple groups
         data['Position Groups'] = data[position_column].apply(
-            lambda pos: [group for group, positions in position_groups.items() if pos in positions])
+            lambda pos: [group for group, positions in position_groups.items() if pos in positions]
+        )
 
         # Initialize session state for 'run_clicked'
         if 'run_clicked' not in st.session_state:
@@ -190,10 +193,15 @@ else:
                 week_summary['Week'] = week_summary['Week'].astype(int)
 
                 week_summary['Matchday'] = week_summary.apply(
-                    lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})", axis=1
+                    lambda row: f"{row['Week']} ({row['min'].strftime('%d.%m.%Y')} - {row['max'].strftime('%d.%m.%Y')})",
+                    axis=1
                 )
 
-                filtered_weeks = week_summary[week_summary['League'] == selected_league].sort_values(by='max', ascending=False).drop_duplicates(subset=['Week'])
+                filtered_weeks = (
+                    week_summary[week_summary['League'] == selected_league]
+                    .sort_values(by='max', ascending=False)
+                    .drop_duplicates(subset=['Week'])
+                )
 
                 # Calculate the number of matchdays
                 num_matchdays = len(filtered_weeks)
@@ -205,7 +213,12 @@ else:
                 matchday_options = [all_option] + filtered_weeks['Matchday'].tolist()
 
                 # Replace selectbox with multiselect including 'All'
-                selected_matchdays = st.multiselect("Select Matchdays", matchday_options, key="select_matchdays", on_change=reset_run)
+                selected_matchdays = st.multiselect(
+                    "Select Matchdays",
+                    matchday_options,
+                    key="select_matchdays",
+                    on_change=reset_run
+                )
 
                 # If no matchdays are selected, show a warning and stop
                 if not selected_matchdays:
@@ -216,15 +229,24 @@ else:
                 if all_option in selected_matchdays:
                     selected_matchdays = filtered_weeks['Matchday'].tolist()
 
-                selected_weeks = filtered_weeks[filtered_weeks['Matchday'].isin(selected_matchdays)]['Week'].unique().tolist()
+                selected_weeks = filtered_weeks[
+                    filtered_weeks['Matchday'].isin(selected_matchdays)
+                ]['Week'].unique().tolist()
 
                 # Get the last date among the selected matchdays
-                selected_dates = filtered_weeks[filtered_weeks['Matchday'].isin(selected_matchdays)]['max']
+                selected_dates = filtered_weeks[
+                    filtered_weeks['Matchday'].isin(selected_matchdays)
+                ]['max']
                 last_selected_date = max(selected_dates)
 
             with col3:
                 position_group_options = list(position_groups.keys())
-                selected_position_group = st.selectbox("Select Position Group", position_group_options, key="select_position_group", on_change=reset_run)
+                selected_position_group = st.selectbox(
+                    "Select Position Group",
+                    position_group_options,
+                    key="select_position_group",
+                    on_change=reset_run
+                )
 
         # Add the "Run" button
         st.button("Run", on_click=run_callback)
@@ -240,6 +262,9 @@ else:
                 'Offensive Rating': 'Player\'s overall offensive performance. Metrics include assists, key passes, etc.',
                 'Physical Offensive Rating': 'Player\'s physical contributions to offensive play.',
                 'Physical Defensive Rating': 'Player\'s physical contributions to defensive play.',
+                'Pass Rating': 'Player\'s overall passing performance. Metrics include pass attempts, completion, key passes, through balls, etc.',
+                'Activity Rating': 'Player\'s involvement in moves, receiving passes, and touches in advanced areas. (Touches, TouchOpBox, PsRec)',
+                'Ballcarrier Rating': 'Player\'s ability to carry the ball forward and beat opponents. (TakeOn, Success1v1, Take on into the Box, ProgCarry)',
                 'Min': 'Minutes played in the selected matchday(s) (total minutes played across all matchdays)',
                 # Physical Metrics
                 'PSV-99': 'Player\'s physical performance score compared to peers.',
@@ -319,7 +344,9 @@ else:
             # Calculate age from birthdate
             data['DOB'] = pd.to_datetime(data['DOB'])
             today = datetime.today()
-            data['Age'] = data['DOB'].apply(lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day)))
+            data['Age'] = data['DOB'].apply(
+                lambda x: today.year - x.year - ((today.month, today.day) < (x.month, x.day))
+            )
 
             # Ensure 'Date' is in datetime format
             data['Date'] = pd.to_datetime(data['Date'])
@@ -330,16 +357,21 @@ else:
             # Remove percentage signs and convert to numeric
             for metric in percentage_metrics:
                 if metric in data.columns:
-                    data[metric] = pd.to_numeric(data[metric].astype(str).str.replace('%', ''), errors='coerce')
+                    data[metric] = pd.to_numeric(
+                        data[metric].astype(str).str.replace('%', ''),
+                        errors='coerce'
+                    )
 
-            # Convert other text-based numbers to numeric
-            physical_metrics = ['PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance',
-                                'Sprint Count', 'HI Distance', 'HI Count', 'Medium Acceleration Count',
-                                'High Acceleration Count', 'Medium Deceleration Count', 'High Deceleration Count',
-                                'Distance OTIP', 'M/min OTIP', 'HSR Distance OTIP', 'HSR Count OTIP',
-                                'Sprint Distance OTIP', 'Sprint Count OTIP', 'HI Distance OTIP', 'HI Count OTIP',
-                                'Medium Acceleration Count OTIP', 'High Acceleration Count OTIP',
-                                'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP']
+            # Define the main metric groups
+            physical_metrics = [
+                'PSV-99', 'Distance', 'M/min', 'HSR Distance', 'HSR Count', 'Sprint Distance',
+                'Sprint Count', 'HI Distance', 'HI Count', 'Medium Acceleration Count',
+                'High Acceleration Count', 'Medium Deceleration Count', 'High Deceleration Count',
+                'Distance OTIP', 'M/min OTIP', 'HSR Distance OTIP', 'HSR Count OTIP',
+                'Sprint Distance OTIP', 'Sprint Count OTIP', 'HI Distance OTIP', 'HI Count OTIP',
+                'Medium Acceleration Count OTIP', 'High Acceleration Count OTIP',
+                'Medium Deceleration Count OTIP', 'High Deceleration Count OTIP'
+            ]
 
             offensive_metrics = [
                 '2ndAst', 'Ast', 'ExpG', 'ExpGExPn', 'Goal', 'GoalExPn', 'KeyPass',
@@ -359,14 +391,28 @@ else:
                 'Shot', 'SOG', 'Shot conversion', 'OnTarget%'
             ]
 
+            # NEW: Activity & Ballcarrier metric groups
+            activity_metrics = ['Touches', 'TouchOpBox', 'PsRec']
+            ballcarrier_metrics = ['TakeOn', 'Success1v1', 'Take on into the Box', 'ProgCarry']
+
             # Combine all metrics for processing
             all_metrics = list(set(
-                physical_metrics + offensive_metrics + defensive_metrics + goal_threat_metrics + percentage_metrics
+                physical_metrics
+                + offensive_metrics
+                + defensive_metrics
+                + goal_threat_metrics
+                + percentage_metrics
+                + activity_metrics
+                + ballcarrier_metrics
             ))
 
+            # Convert numeric columns (excluding the already handled percentages)
             for metric in all_metrics:
                 if metric in data.columns and metric not in percentage_metrics:
-                    data[metric] = pd.to_numeric(data[metric].astype(str).str.replace(',', '.'), errors='coerce')
+                    data[metric] = pd.to_numeric(
+                        data[metric].astype(str).str.replace(',', '.'),
+                        errors='coerce'
+                    )
 
             # Ensure 'Min' column is numeric
             if 'Min' in data.columns:
@@ -386,6 +432,8 @@ else:
             fill_na_conditionally(data, offensive_metrics)
             fill_na_conditionally(data, defensive_metrics)
             fill_na_conditionally(data, goal_threat_metrics)
+            fill_na_conditionally(data, activity_metrics)
+            fill_na_conditionally(data, ballcarrier_metrics)
 
             # Initialize the scalers
             scaler = MinMaxScaler(feature_range=(0, 10))
@@ -407,55 +455,140 @@ else:
                 'High Deceleration Count OTIP'
             ]
 
-            # Calculate the ratings
-            data['Physical Offensive Rating'] = scaler.fit_transform(
-                quantile_transformer.fit_transform(data[physical_offensive_metrics].fillna(0))
-            ).mean(axis=1)
+            # Define pass metrics (with weighting logic already in place before log transform)
+            pass_metrics = [
+                'PsAtt', 'PsCmp', 'Pass%', 'PsIntoA3rd', 'KeyPass', 'ThrghBalls'
+            ]
+            weights = {
+                'PsAtt': 1.0,
+                'PsCmp': 1.0,
+                'Pass%': 1.0,
+                'PsIntoA3rd': 2.0,
+                'KeyPass': 2.0,
+                'ThrghBalls': 2.0
+            }
 
-            data['Physical Defensive Rating'] = scaler.fit_transform(
-                quantile_transformer.fit_transform(data[physical_defensive_metrics].fillna(0))
-            ).mean(axis=1)
+            # --- Calculate the Ratings ---
 
-            data['Offensive Rating'] = scaler.fit_transform(
-                quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
-            ).mean(axis=1)
+            # 1) Physical Offensive Rating
+            data['Physical Offensive Rating'] = (
+                scaler.fit_transform(
+                    quantile_transformer.fit_transform(data[physical_offensive_metrics].fillna(0))
+                ).mean(axis=1)
+            )
 
-            data['Defensive Rating'] = scaler.fit_transform(
-                quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
-            ).mean(axis=1)
+            # 2) Physical Defensive Rating
+            data['Physical Defensive Rating'] = (
+                scaler.fit_transform(
+                    quantile_transformer.fit_transform(data[physical_defensive_metrics].fillna(0))
+                ).mean(axis=1)
+            )
 
-            data['Goal Threat Rating'] = scaler.fit_transform(
-                quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
-            ).mean(axis=1)
+            # 3) Offensive Rating
+            data['Offensive Rating'] = (
+                scaler.fit_transform(
+                    quantile_transformer.fit_transform(data[offensive_metrics].fillna(0))
+                ).mean(axis=1)
+            )
 
-            rating_metrics = ['Overall Rating', 'Physical Offensive Rating', 'Physical Defensive Rating',
-                              'Offensive Rating', 'Defensive Rating', 'Goal Threat Rating']
+            # 4) Defensive Rating
+            data['Defensive Rating'] = (
+                scaler.fit_transform(
+                    quantile_transformer.fit_transform(data[defensive_metrics].fillna(0))
+                ).mean(axis=1)
+            )
 
-            data['Overall Rating'] = data[['Physical Offensive Rating', 'Physical Defensive Rating',
-                                           'Offensive Rating', 'Defensive Rating', 'Goal Threat Rating']].mean(axis=1)
+            # 5) Goal Threat Rating
+            data['Goal Threat Rating'] = (
+                scaler.fit_transform(
+                    quantile_transformer.fit_transform(data[goal_threat_metrics].fillna(0))
+                ).mean(axis=1)
+            )
 
-            # Ensure the data is sorted
+            # 6) Pass Rating with LOG TRANSFORM + weighting **before** log
+            pass_subset = data[pass_metrics].fillna(0).copy()
+            for col in pass_metrics:
+                pass_subset[col] = pass_subset[col] * weights[col]
+
+            pass_logged = np.log1p(pass_subset)
+            pass_transformed = quantile_transformer.fit_transform(pass_logged)
+            pass_scaled = scaler.fit_transform(pass_transformed)
+            data['Pass Rating'] = pass_scaled.mean(axis=1)
+
+            # 7) Activity Rating (no log, no extra weighting)
+            data['Activity Rating'] = (
+                scaler.fit_transform(
+                    quantile_transformer.fit_transform(data[activity_metrics].fillna(0))
+                ).mean(axis=1)
+            )
+
+            # 8) Ballcarrier Rating (no log, no extra weighting)
+            data['Ballcarrier Rating'] = (
+                scaler.fit_transform(
+                    quantile_transformer.fit_transform(data[ballcarrier_metrics].fillna(0))
+                ).mean(axis=1)
+            )
+
+            # Gather all rating columns
+            rating_metrics = [
+                'Overall Rating',
+                'Physical Offensive Rating',
+                'Physical Defensive Rating',
+                'Offensive Rating',
+                'Defensive Rating',
+                'Goal Threat Rating',
+                'Pass Rating',
+                'Activity Rating',
+                'Ballcarrier Rating'
+            ]
+
+            # Calculate Overall Rating (including Pass Rating). 
+            # NOTE: If you want to include the new ratings in Overall Rating, add them here.
+            data['Overall Rating'] = data[[
+                'Physical Offensive Rating',
+                'Physical Defensive Rating',
+                'Offensive Rating',
+                'Defensive Rating',
+                'Goal Threat Rating',
+                'Pass Rating'
+            ]].mean(axis=1)
+
+            # Sort data
             data = data.sort_values(['League', 'playerFullName', 'Date'])
 
             # Create a list of metrics for which we want cumulative averages
-            metrics_for_cum_avg = rating_metrics + physical_offensive_metrics + physical_defensive_metrics + offensive_metrics + defensive_metrics
+            metrics_for_cum_avg = (
+                rating_metrics
+                + physical_offensive_metrics
+                + physical_defensive_metrics
+                + offensive_metrics
+                + defensive_metrics
+                + activity_metrics
+                + ballcarrier_metrics
+            )
             metrics_for_cum_avg = list(set(metrics_for_cum_avg))
 
             # Calculate cumulative averages for each player in each league
             for metric in metrics_for_cum_avg:
-                data[f'{metric}_cum_avg'] = data.groupby(['League', 'playerFullName'])[metric].expanding().mean().reset_index(level=[0, 1], drop=True)
+                data[f'{metric}_cum_avg'] = (
+                    data
+                    .groupby(['League', 'playerFullName'])[metric]
+                    .expanding()
+                    .mean()
+                    .reset_index(level=[0, 1], drop=True)
+                )
 
             # Filter data by the selected position group and the selected matchdays
             league_and_position_data = data[
-                (data['League'] == selected_league) &
-                (data['Week'].isin(selected_weeks)) &
-                (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
+                (data['League'] == selected_league)
+                & (data['Week'].isin(selected_weeks))
+                & (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
             ]
 
             # Data filtered by League and Position Group only (all matchdays)
             league_position_all_data = data[
-                (data['League'] == selected_league) &
-                (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
+                (data['League'] == selected_league)
+                & (data['Position Groups'].apply(lambda groups: selected_position_group in groups))
             ]
 
             # Identify the team column globally
@@ -490,7 +623,17 @@ else:
             # Collect Mentions Over All Matchdays
             all_weeks = league_position_all_data['Week'].unique()
             mentions_dict = {}
-            rating_metrics_to_collect = ['Overall Rating', 'Offensive Rating', 'Goal Threat Rating', 'Defensive Rating', 'Physical Offensive Rating', 'Physical Defensive Rating']
+            rating_metrics_to_collect = [
+                'Overall Rating',
+                'Offensive Rating',
+                'Goal Threat Rating',
+                'Pass Rating',
+                'Activity Rating',
+                'Ballcarrier Rating',
+                'Defensive Rating',
+                'Physical Offensive Rating',
+                'Physical Defensive Rating'
+            ]
 
             for week in all_weeks:
                 week_data = league_position_all_data[league_position_all_data['Week'] == week]
@@ -525,14 +668,28 @@ else:
                     for _, row in top10.iterrows():
                         player = row['playerFullName']
                         if player not in mentions_dict:
-                            mentions_dict[player] = {'Player': player, 'Age': row['Age'], 'Team': row.get(team_column, ''), 'Position': row.get(position_column, ''), 'Total Mentions': 0}
+                            mentions_dict[player] = {
+                                'Player': player,
+                                'Age': row['Age'],
+                                'Team': row.get(team_column, ''),
+                                'Position': row.get(position_column, ''),
+                                'Total Mentions': 0
+                            }
                             for m in rating_metrics_to_collect:
                                 mentions_dict[player][m] = 0
                         mentions_dict[player]['Total Mentions'] += 1
                         mentions_dict[player][metric] += 1
 
             with st.container():
-                tooltip_headers = {metric: glossary.get(metric, '') for metric in rating_metrics + physical_metrics + offensive_metrics + defensive_metrics}
+                tooltip_headers = {
+                    metric: glossary.get(metric, '')
+                    for metric in rating_metrics
+                    + physical_metrics
+                    + offensive_metrics
+                    + defensive_metrics
+                    + activity_metrics
+                    + ballcarrier_metrics
+                }
 
                 # Ratings Section
                 with st.expander("Ratings", expanded=False):
@@ -549,7 +706,12 @@ else:
                         else:
                             agg_func = 'mean'
 
-                        agg_dict = {'Age': 'last', metric: agg_func, f'{metric}_cum_avg': 'last', 'Min': 'sum'}
+                        agg_dict = {
+                            'Age': 'last',
+                            metric: agg_func,
+                            f'{metric}_cum_avg': 'last',
+                            'Min': 'sum'
+                        }
 
                         if team_column:
                             agg_dict[team_column] = 'last'
@@ -570,12 +732,26 @@ else:
 
                         latest_data = latest_data.merge(minutes_total, on='playerFullName', how='left')
                         latest_data['Min'] = latest_data.apply(
-                            lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})", axis=1
+                            lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})",
+                            axis=1
                         )
 
-                        columns_to_select = ['playerFullName', 'Age', team_column, position_column, 'Min', metric, f'{metric}_cum_avg']
+                        columns_to_select = [
+                            'playerFullName',
+                            'Age',
+                            team_column,
+                            position_column,
+                            'Min',
+                            metric,
+                            f'{metric}_cum_avg'
+                        ]
                         available_columns = [col for col in columns_to_select if col in latest_data.columns]
-                        top10 = latest_data[available_columns].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                        top10 = (
+                            latest_data[available_columns]
+                            .dropna(subset=[metric])
+                            .sort_values(by=metric, ascending=False)
+                            .head(10)
+                        )
 
                         if top10.empty:
                             st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
@@ -593,7 +769,8 @@ else:
                             top10.rename(columns={team_column: 'Team'}, inplace=True)
 
                         top10[metric] = top10.apply(
-                            lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})" if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
+                            lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})"
+                            if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
                             axis=1
                         )
                         top10.drop(columns=[f'{metric}_cum_avg'], inplace=True)
@@ -648,7 +825,12 @@ else:
                             else:
                                 agg_func = 'mean'
 
-                            agg_dict = {'Age': 'last', metric: agg_func, f'{metric}_cum_avg': 'last', 'Min': 'sum'}
+                            agg_dict = {
+                                'Age': 'last',
+                                metric: agg_func,
+                                f'{metric}_cum_avg': 'last',
+                                'Min': 'sum'
+                            }
 
                             if team_column:
                                 agg_dict[team_column] = 'last'
@@ -668,12 +850,21 @@ else:
                             minutes_total.rename(columns={'Min': 'Min_Total'}, inplace=True)
                             latest_data = latest_data.merge(minutes_total, on='playerFullName', how='left')
                             latest_data['Min'] = latest_data.apply(
-                                lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})", axis=1
+                                lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})",
+                                axis=1
                             )
 
-                            columns_to_select = ['playerFullName', 'Age', team_column, position_column, 'Min', metric, f'{metric}_cum_avg']
+                            columns_to_select = [
+                                'playerFullName', 'Age', team_column, position_column,
+                                'Min', metric, f'{metric}_cum_avg'
+                            ]
                             available_columns = [col for col in columns_to_select if col in latest_data.columns]
-                            top10 = latest_data[available_columns].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                            top10 = (
+                                latest_data[available_columns]
+                                .dropna(subset=[metric])
+                                .sort_values(by=metric, ascending=False)
+                                .head(10)
+                            )
 
                             st.markdown(f"<h2>{metric}</h2>", unsafe_allow_html=True)
 
@@ -691,7 +882,8 @@ else:
                                     top10.rename(columns={team_column: 'Team'}, inplace=True)
 
                                 top10[metric] = top10.apply(
-                                    lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})" if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
+                                    lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})"
+                                    if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
                                     axis=1
                                 )
                                 top10.drop(columns=[f'{metric}_cum_avg'], inplace=True)
@@ -710,11 +902,16 @@ else:
                             # If the metric is 'PSV-99', also display the overall top 10 (ignoring position group)
                             if metric == 'PSV-99':
                                 metric_data_overall = data[
-                                    (data['League'] == selected_league) &
-                                    (data['Week'].isin(selected_weeks))
+                                    (data['League'] == selected_league)
+                                    & (data['Week'].isin(selected_weeks))
                                 ]
 
-                                agg_dict_overall = {'Age': 'last', metric: agg_func, f'{metric}_cum_avg': 'last', 'Min': 'sum'}
+                                agg_dict_overall = {
+                                    'Age': 'last',
+                                    metric: agg_func,
+                                    f'{metric}_cum_avg': 'last',
+                                    'Min': 'sum'
+                                }
                                 if team_column:
                                     agg_dict_overall[team_column] = 'last'
                                 if position_column in metric_data_overall.columns:
@@ -731,12 +928,23 @@ else:
                                 minutes_total_overall.rename(columns={'Min': 'Min_Total'}, inplace=True)
                                 latest_data_overall = latest_data_overall.merge(minutes_total_overall, on='playerFullName', how='left')
                                 latest_data_overall['Min'] = latest_data_overall.apply(
-                                    lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})", axis=1
+                                    lambda row: f"{int(row['Min'])} ({int(row['Min_Total'])})",
+                                    axis=1
                                 )
 
-                                columns_to_select_overall = ['playerFullName', 'Age', team_column, position_column, 'Min', metric, f'{metric}_cum_avg']
-                                available_columns_overall = [col for col in columns_to_select_overall if col in latest_data_overall.columns]
-                                top10_overall = latest_data_overall[available_columns_overall].dropna(subset=[metric]).sort_values(by=metric, ascending=False).head(10)
+                                columns_to_select_overall = [
+                                    'playerFullName', 'Age', team_column, position_column,
+                                    'Min', metric, f'{metric}_cum_avg'
+                                ]
+                                available_columns_overall = [
+                                    col for col in columns_to_select_overall if col in latest_data_overall.columns
+                                ]
+                                top10_overall = (
+                                    latest_data_overall[available_columns_overall]
+                                    .dropna(subset=[metric])
+                                    .sort_values(by=metric, ascending=False)
+                                    .head(10)
+                                )
 
                                 if not top10_overall.empty:
                                     top10_overall.reset_index(drop=True, inplace=True)
@@ -750,7 +958,8 @@ else:
                                         top10_overall.rename(columns={team_column: 'Team'}, inplace=True)
 
                                     top10_overall[metric] = top10_overall.apply(
-                                        lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})" if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
+                                        lambda row: f"{row[metric]:.2f} ({row[f'{metric}_cum_avg']:.2f})"
+                                        if pd.notnull(row[f'{metric}_cum_avg']) else f"{row[metric]:.2f}",
                                         axis=1
                                     )
 
@@ -779,8 +988,15 @@ else:
             with st.expander("Glossary"):
                 sections = {
                     "Ratings": [
-                        'Overall Rating', 'Defensive Rating', 'Goal Threat Rating', 'Offensive Rating',
-                        'Physical Defensive Rating', 'Physical Offensive Rating'
+                        'Overall Rating',
+                        'Defensive Rating',
+                        'Goal Threat Rating',
+                        'Offensive Rating',
+                        'Physical Defensive Rating',
+                        'Physical Offensive Rating',
+                        'Pass Rating',
+                        'Activity Rating',
+                        'Ballcarrier Rating'
                     ],
                     "Offensive Metrics": [
                         '2ndAst', 'Ast', 'ExpG', 'ExpGExPn', 'Goal', 'GoalExPn', 'KeyPass',
@@ -795,11 +1011,16 @@ else:
                         'TcklAtt', 'Tckl', 'TcklMade%', 'TcklA3'
                     ],
                     "Physical Offensive Metrics": physical_offensive_metrics,
-                    "Physical Defensive Metrics": physical_defensive_metrics
+                    "Physical Defensive Metrics": physical_defensive_metrics,
+                    "Activity Metrics": activity_metrics,
+                    "Ballcarrier Metrics": ballcarrier_metrics
                 }
 
                 for section, metrics in sections.items():
-                    st.markdown(f"<h3 style='font-size:15px; color:#333; font-weight:bold;'>{section}</h3>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<h3 style='font-size:15px; color:#333; font-weight:bold;'>{section}</h3>",
+                        unsafe_allow_html=True
+                    )
                     for metric in metrics:
                         explanation = glossary.get(metric, "")
                         st.markdown(f"{metric}: *{explanation}*")
